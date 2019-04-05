@@ -9,15 +9,21 @@ variable "hana_sizing" {
   default = [
     {
       # XS
-      vm_sku = "Standard_D8s_v3"
-
-      # disk_sizes        = ["30,200,100,50"]
-      # disk_counts       = ["1,2,2,1"]
-      # disk_types        = ["Standard_LRS,Standard_LRS,Standard_LRS,Standard_LRS"]
-      disk_sizes_data = "200,200"
-
-      disk_sizes_log    = "100,100"
-      disk_sizes_shared = "50"
+      vm_sku      = "Standard_D8s_v3"
+      disk_labels = "os,hana,,,"
+      disk_sizes  = "30,200,0,0"
+      disk_counts = "1,1,0,0"
+      disk_types  = "Standard_LRS,Standard_LRS,Standard_LRS,Standard_LRS"
+      disk_caches = "ReadWrite,ReadWrite,ReadWrite,ReadWrite"
+    },
+    {
+      # S
+      vm_sku      = "Standard_D8s_v3"
+      disk_labels = "os,data,log,shared"
+      disk_sizes  = "30,100,200,50"
+      disk_counts = "1,1,2,1"
+      disk_types  = "Standard_LRS,Standard_LRS,Standard_LRS,Standard_LRS"
+      disk_caches = "ReadWrite,ReadWrite,ReadWrite,ReadWrite"
     },
   ]
 }

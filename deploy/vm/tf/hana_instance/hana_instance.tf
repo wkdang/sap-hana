@@ -11,15 +11,23 @@ variable "hana_node_count" {}
 variable "hana_vm_sku" {}
 variable "hana_vm_username" {}
 
-variable "hana_disk_sizes_data" {
+variable "hana_disk_sizes" {
   type = "list"
 }
 
-variable "hana_disk_sizes_log" {
+variable "hana_disk_labels" {
   type = "list"
 }
 
-variable "hana_disk_sizes_shared" {
+variable "hana_disk_counts" {
+  type = "list"
+}
+
+variable "hana_disk_types" {
+  type = "list"
+}
+
+variable "hana_disk_caches" {
   type = "list"
 }
 
@@ -29,6 +37,8 @@ variable "hana_subnet" {}
 variable "hana_enable_public_ip" {}
 variable "hana_nsg_id" {}
 variable "hana_instance_name" {}
+variable "availability_set_id" {}
+variable "hana_vnet_name" {}
 
 #######################################################################
 # RESOURCES
@@ -36,17 +46,23 @@ variable "hana_instance_name" {}
 
 # VNET ================================================================
 resource "azurerm_virtual_network" "hana_vnet" {
-  name                = "${var.resource_prefix}vnet"
+  name                = "${format("%s-vnet", replace(var.hana_instance_name, "[num]", ""))}"
+  count               = "${var.enabled && var.hana_vnet_name == "" ? 1 : 0}"
   location            = "${var.hana_region}"
   resource_group_name = "${var.hana_rg_name}"
   address_space       = ["${var.hana_address_space}"]
 }
 
+locals {
+  hana_vnet_name = "${var.hana_vnet_name != "" ? var.hana_vnet_name : join(",",azurerm_virtual_network.hana_vnet.*.name) }"
+}
+
 # SUBNET ==============================================================
 resource "azurerm_subnet" "hana_subnet" {
-  name                      = "${var.resource_prefix}${substr(var.hana_subnet, 0, length(var.hana_subnet)-3)}-subnet"
+  name                      = "${format("%s-subnet", replace(var.hana_instance_name, "[num]", ""))}"
+  count                     = "${var.enabled ? 1 : 0}"
   resource_group_name       = "${var.hana_rg_name}"
-  virtual_network_name      = "${azurerm_virtual_network.hana_vnet.name}"
+  virtual_network_name      = "${local.hana_vnet_name}"
   address_prefix            = "${var.hana_subnet}"
   network_security_group_id = "${var.hana_nsg_id}"
 }
@@ -54,7 +70,7 @@ resource "azurerm_subnet" "hana_subnet" {
 # PUBLIC IPs ==========================================================
 resource "azurerm_public_ip" "hana_pips" {
   name                         = "${replace(var.hana_instance_name, "[num]", count.index)}-pip"
-  count                        = "${var.hana_enable_public_ip ? var.hana_node_count : 0}"
+  count                        = "${var.enabled && var.hana_enable_public_ip ? var.hana_node_count : 0}"
   location                     = "${var.hana_region}"
   resource_group_name          = "${var.hana_rg_name}"
   public_ip_address_allocation = "dynamic"
@@ -64,7 +80,7 @@ resource "azurerm_public_ip" "hana_pips" {
 # NETWORK INTERFACEs ==================================================
 resource "azurerm_network_interface" "hana_nics_with_pip" {
   name                      = "${replace(var.hana_instance_name, "[num]", count.index)}-nic"
-  count                     = "${var.hana_enable_public_ip ? var.hana_node_count : 0}"
+  count                     = "${var.enabled && var.hana_enable_public_ip ? var.hana_node_count : 0}"
   location                  = "${var.hana_region}"
   resource_group_name       = "${var.hana_rg_name}"
   network_security_group_id = "${var.hana_nsg_id}"
@@ -80,7 +96,7 @@ resource "azurerm_network_interface" "hana_nics_with_pip" {
 
 resource "azurerm_network_interface" "hana_nics_without_pip" {
   name                      = "${replace(var.hana_instance_name, "[num]", count.index)}-nic"
-  count                     = "${!var.hana_enable_public_ip ? var.hana_node_count : 0}"
+  count                     = "${var.enabled && !var.hana_enable_public_ip ? var.hana_node_count : 0}"
   location                  = "${var.hana_region}"
   resource_group_name       = "${var.hana_rg_name}"
   network_security_group_id = "${var.hana_nsg_id}"
@@ -99,81 +115,55 @@ locals {
 }
 
 # DISKs ===============================================================
-# -------+---+---+---+---+---+---+
-# VM #   | 0 | 0 | 1 | 1 | 2 | 2 | hana_node_count = 3
-# Disk # | 0 | 1 | 0 | 1 | 0 | 1 | length(hana_disk_sizes) = 2
-# -------+---+---+---+---+---+---+
-# Count  | 0 | 1 | 2 | 3 | 4 | 5 |
-# -------+---+---+---+---+---+---+
-resource "azurerm_managed_disk" "hana_disks_data" {
-  name                 = "${replace(var.hana_instance_name, "[num]", count.index / length(var.hana_disk_sizes_data))}-disk-data${count.index % length(var.hana_disk_sizes_data)}"
-  count                = "${var.hana_node_count * length(var.hana_disk_sizes_data)}"
-  location             = "${var.hana_region}"
-  resource_group_name  = "${var.hana_rg_name}"
-  storage_account_type = "Standard_LRS"
-  create_option        = "Empty"
-  disk_size_gb         = "${element(var.hana_disk_sizes_data, count.index % length(var.hana_disk_sizes_data))}"
+# -------+---+---+---+---+---+
+# VM #   | DATA  |  LOG  | S |
+# Disk # | 0 | 1 | 0 | 1 | 0 |
+# -------+---+---+---+---+---+
+# Count  | 0 | 1 | 2 | 3 | 4 | VM 0
+#        | 5 | 6 | 7 | 8 | 9 | VM 1
+# -------+---+---+---+---+---+
+
+locals {
+  disk_count_per_vm = "${(var.hana_disk_counts[1] + var.hana_disk_counts[2] + var.hana_disk_counts[3])}"
+  int_to_str        = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 }
 
-resource "azurerm_managed_disk" "hana_disks_log" {
-  name                 = "${replace(var.hana_instance_name, "[num]", count.index / length(var.hana_disk_sizes_log))}-disk-log${count.index % length(var.hana_disk_sizes_log)}"
-  count                = "${var.hana_node_count * length(var.hana_disk_sizes_log)}"
+# Spaghetti code compliments of HCL
+resource "azurerm_managed_disk" "hana_disks" {
+  name                 = "${replace(var.hana_instance_name, "[num]", count.index / local.disk_count_per_vm)}-disk-${var.hana_disk_labels[ (count.index % local.disk_count_per_vm) < var.hana_disk_counts[1] ? 1 : ((count.index % local.disk_count_per_vm) >= (var.hana_disk_counts[1] + var.hana_disk_counts[2]) ? 3 : 2 )]}${var.hana_disk_counts[(count.index % local.disk_count_per_vm) < var.hana_disk_counts[1] ? 1 : ((count.index % local.disk_count_per_vm) >= (var.hana_disk_counts[1] + var.hana_disk_counts[2]) ? 3 : 2 )] == 1 ? "" : local.int_to_str[count.index % local.disk_count_per_vm < var.hana_disk_counts[1] ? count.index % local.disk_count_per_vm : (count.index % local.disk_count_per_vm >= (var.hana_disk_counts[1] + var.hana_disk_counts[2]) ? (count.index % local.disk_count_per_vm) - var.hana_disk_counts[2] - var.hana_disk_counts[1] : (count.index % local.disk_count_per_vm) - var.hana_disk_counts[1])]}"
+  count                = "${var.enabled ? local.disk_count_per_vm * var.hana_node_count : 0}"
   location             = "${var.hana_region}"
   resource_group_name  = "${var.hana_rg_name}"
-  storage_account_type = "Standard_LRS"
+  storage_account_type = "${var.hana_disk_types[(count.index % local.disk_count_per_vm) < var.hana_disk_counts[1] ? 1 : ((count.index % local.disk_count_per_vm) >= (var.hana_disk_counts[1] + var.hana_disk_counts[2]) ? 3 : 2 )]}"
   create_option        = "Empty"
-  disk_size_gb         = "${element(var.hana_disk_sizes_log, count.index % length(var.hana_disk_sizes_log))}"
-}
-
-resource "azurerm_managed_disk" "hana_disks_shared" {
-  name                 = "${replace(var.hana_instance_name, "[num]", count.index / length(var.hana_disk_sizes_shared))}-disk-shared${count.index % length(var.hana_disk_sizes_shared)}"
-  count                = "${var.hana_node_count * length(var.hana_disk_sizes_shared)}"
-  location             = "${var.hana_region}"
-  resource_group_name  = "${var.hana_rg_name}"
-  storage_account_type = "Standard_LRS"
-  create_option        = "Empty"
-  disk_size_gb         = "${element(var.hana_disk_sizes_shared, count.index % length(var.hana_disk_sizes_shared))}"
+  disk_size_gb         = "${var.hana_disk_sizes[(count.index % local.disk_count_per_vm) < var.hana_disk_counts[1] ? 1 : ((count.index % local.disk_count_per_vm) >= (var.hana_disk_counts[1] + var.hana_disk_counts[2]) ? 3 : 2 )]}"
 }
 
 # DISK ATTACHMENTs ====================================================
-resource "azurerm_virtual_machine_data_disk_attachment" "hana_disk_data_to_vm_attachments" {
-  count              = "${var.hana_node_count * length(var.hana_disk_sizes_data)}"
-  managed_disk_id    = "${azurerm_managed_disk.hana_disks_data.*.id[count.index]}"
-  virtual_machine_id = "${azurerm_virtual_machine.hana_vms.*.id[count.index / length(var.hana_disk_sizes_data)]}"
-  lun                = "${1 + (count.index % length(var.hana_disk_sizes_data))}"
-  caching            = "ReadWrite"
-}
-
-resource "azurerm_virtual_machine_data_disk_attachment" "hana_disk_log_to_vm_attachments" {
-  count              = "${var.hana_node_count * length(var.hana_disk_sizes_log)}"
-  managed_disk_id    = "${azurerm_managed_disk.hana_disks_log.*.id[count.index]}"
-  virtual_machine_id = "${azurerm_virtual_machine.hana_vms.*.id[count.index / length(var.hana_disk_sizes_log)]}"
-  lun                = "${1 + length(var.hana_disk_sizes_data) + (count.index % length(var.hana_disk_sizes_log))}"
-  caching            = "ReadWrite"
-}
-
-resource "azurerm_virtual_machine_data_disk_attachment" "hana_disk_shared_to_vm_attachments" {
-  count              = "${var.hana_node_count * length(var.hana_disk_sizes_shared)}"
-  managed_disk_id    = "${azurerm_managed_disk.hana_disks_shared.*.id[count.index]}"
-  virtual_machine_id = "${azurerm_virtual_machine.hana_vms.*.id[count.index / length(var.hana_disk_sizes_shared)]}"
-  lun                = "${1 + length(var.hana_disk_sizes_data) + length(var.hana_disk_sizes_log) + (count.index % length(var.hana_disk_sizes_shared))}"
-  caching            = "ReadWrite"
+resource "azurerm_virtual_machine_data_disk_attachment" "hana_disk_to_vm_attachments" {
+  count              = "${var.enabled ? local.disk_count_per_vm * var.hana_node_count : 0}"
+  managed_disk_id    = "${azurerm_managed_disk.hana_disks.*.id[count.index]}"
+  virtual_machine_id = "${azurerm_virtual_machine.hana_vms.*.id[count.index / local.disk_count_per_vm]}"
+  lun                = "${1 + (count.index % local.disk_count_per_vm)}"
+  caching            = "${var.hana_disk_caches[(count.index % local.disk_count_per_vm) < var.hana_disk_counts[1] ? 1 : ((count.index % local.disk_count_per_vm) >= (var.hana_disk_counts[1] + var.hana_disk_counts[2]) ? 3 : 2 )]}"
 }
 
 # VIRTUAL MACHINEs ====================================================
 resource "azurerm_virtual_machine" "hana_vms" {
   name                  = "${replace(var.hana_instance_name, "[num]", count.index)}"
-  count                 = "${var.hana_node_count}"
+  count                 = "${var.enabled ? var.hana_node_count : 0}"
   location              = "${var.hana_region}"
   resource_group_name   = "${var.hana_rg_name}"
   vm_size               = "${var.hana_vm_sku}"
   network_interface_ids = ["${local.hana_nic_ids[count.index]}"]
+  availability_set_id   = "${var.availability_set_id}"
 
   storage_os_disk {
     name              = "${replace(var.hana_instance_name, "[num]", count.index)}-disk-os"
-    caching           = "ReadWrite"
     create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+    disk_size_gb      = "${var.hana_disk_sizes[0]}"
+    managed_disk_type = "${var.hana_disk_types[0]}"
+    caching           = "${var.hana_disk_caches[0]}"
   }
 
   storage_image_reference {
