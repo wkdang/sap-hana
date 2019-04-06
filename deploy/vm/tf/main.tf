@@ -114,7 +114,7 @@ module "hana_instance_2" {
   hana_disk_caches      = "${local.hana_disk_caches}"
   hana_vnet_name        = "${module.hana_ha.vnet_name}"
   hana_region           = "${lookup(local.hana_sites[1], "region")}"
-  hana_address_space    = "${lookup(local.hana_sites[1], "address_space", "")}"
+  hana_address_space    = "${lookup(local.hana_sites[1], "address_space", "0.0.0.0/8")}"
   hana_subnet           = "${lookup(local.hana_sites[1], "subnet")}"
   availability_set_id   = "${module.hana_ha.availability_set_id}"
   hana_enable_public_ip = "${local.hana_enable_public_ip}"
