@@ -17,7 +17,7 @@ import logging, http.client as http_client
 
 STATE_FILE                   = "sapmon.state"
 INITIAL_LOADHISTORY_TIMESPAN = -(60 * 1)
-LOG_TYPE                     = "SapHana_Infra"
+LOG_TYPE                     = "001-" # SapHana_Infra"
 TIME_FORMAT_HANA             = "%Y-%m-%d %H:%M:%S.%f"
 TIME_FORMAT_LOG_ANALYTICS    = "%a, %d %b %Y %H:%M:%S GMT"
 TIMEOUT_HANA                 = 5
@@ -234,6 +234,61 @@ class AzureKeyVault:
 
 ###############################################################################
 
+class AzureAppInsights:
+   """
+   Provide access to an Azure Application Insights instance
+   """
+   def __init__(self, instrKey):
+      self.instrKey  = instrKey
+      # self.telClient = TelemetryClient(self.instrKey)
+      self.uri       = "https://dc.services.visualstudio.com/v2/track"
+
+   def ingest(self, logType, jsonData):
+      """
+      Ingest JSON payload as custom metric to Application Insights
+      """
+      jsonData = json.loads(jsonData)
+      output = ""
+      for j in jsonData:
+         metrics = []
+         properties = {}
+         for k in j:
+            if k == "UTC_TIMESTAMP":
+               continue
+            v = j[k]
+            if str(v).replace(".", "", 1).replace("-", "", 1).isdigit():
+               metrics.append({
+                  "name": "%s%s" % (logType, k),
+                  "value": v,
+                  "count": 1,
+                  })
+            else:
+               properties[k] = v
+         data = {
+            "iKey": self.instrKey,
+            "time": j["UTC_TIMESTAMP"],
+            "name": "MetricData",
+            "data": {
+               "baseType": "MetricData",
+               "baseData": {
+                  "metrics": metrics,
+                  "properties": properties,
+               }
+            }
+         }
+         output += json.dumps(data, indent=3) + "\n\n"
+      output = output[:-2]
+      with open("output", "w") as f:
+         f.write(output)
+      
+      res = REST.sendRequest(
+         self.uri,
+         method  = requests.post,
+         headers = {},
+         data    = output,
+         )
+      print(res)
+
 class AzureLogAnalytics:
    """
    Provide access to an Azure Log Analytics WOrkspace
@@ -289,7 +344,7 @@ class _Context:
       self.vmInstance = AzureInstanceMetadataService.getComputeInstance()
       vmTags          = dict(map(lambda s : s.split(':'), self.vmInstance["tags"].split(";")))
       self.sapmonId   = vmTags["SapMonId"]
-      self.azKv       = AzureKeyVault("sapmon%s" % self.sapmonId)
+      self.azKv       = AzureKeyVault("sapmon-%s" % self.sapmonId)
       self.lastPull   = self.readLastPullTimestamp()
 
    def readLastPullTimestamp(self):
@@ -339,6 +394,10 @@ class _Context:
       self.azLa = AzureLogAnalytics(
          laSecret["LogAnalyticsWorkspaceId"],
          laSecret["LogAnalyticsSharedKey"]
+         )
+
+      self.azAi = AzureAppInsights(
+         "fe2ce333-3990-4ec5-aa81-ba54e32c374e"
          )
 
 ###############################################################################
@@ -411,10 +470,11 @@ def monitor(args):
          jsonData = json.dumps(logItem, sort_keys=True, indent=4, cls=_JsonEncoder)
          logData.append(logItem)
       jsonData = json.dumps(logData, sort_keys=True, indent=4, cls=_JsonEncoder)
-      ctx.azLa.ingest(LOG_TYPE, jsonData)
+      #ctx.azLa.ingest(LOG_TYPE, jsonData)
+      ctx.azAi.ingest(LOG_TYPE, jsonData)
       ctx.setLastPullTimestamp(lastPull)
-      with open("output", "w") as f:
-         f.write(jsonData)
+      # with open("output", "w") as f:
+      #     f.write(jsonData)
       h.disconnect()
       
 def main():
