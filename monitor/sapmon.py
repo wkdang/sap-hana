@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, date
 import hashlib, hmac, base64
 import logging, http.client as http_client
 import hashlib
+import re
 
 ###############################################################################
 
@@ -32,27 +33,37 @@ class SapHana:
    connection = None
    cursor     = None
 
-   def __init__(self, host = None, port = None, user = None, password = None, hanaDetails = None):
+   def __init__(self, host = None, port = None, user = None, password = None, passwordKeyVault = None, msiClientId = None, hanaDetails = None):
       if hanaDetails:
-         self.host     = hanaDetails["HanaHostname"]
-         self.port     = hanaDetails["HanaDbSqlPort"]
-         self.user     = hanaDetails["HanaDbUsername"]
-         self.password = hanaDetails["HanaDbPassword"]
+         self.host             = hanaDetails["HanaHostname"]
+         self.port             = hanaDetails["HanaDbSqlPort"]
+         self.user             = hanaDetails["HanaDbUsername"]
+         self.password         = hanaDetails["HanaDbPassword"]
+         self.passwordKeyVault = hanaDetails["HanaDbPasswordKeyVault"]
+         self.msiClientId      = hanaDetails["MsiClientId"]
       else:
-         self.host     = host
-         self.port     = port
-         self.user     = user
-         self.password = password
+         self.host             = host
+         self.port             = port
+         self.user             = user
+         self.password         = password
+         self.passwordKeyVault = passwordKeyVault
+         self.msiClientId      = msiClientId
 
    def connect(self):
       """
       Connect to a HDB instance
       """
+      password = self.password
+      if not password:
+         vaultNameSearch = re.search('https://(.*).vault.azure.net', self.passwordKeyVault)
+         kv = AzureKeyVault(vaultNameSearch.group(1), self.msiClientId)
+         password = kv.getSecret(self.passwordKeyVault)
+
       self.connection = pyhdb.Connection(
          host = self.host,
          port = self.port,
          user = self.user,
-         password = self.password,
+         password = password,
          timeout = TIMEOUT_HANA,
          )
       self.connection.connect()
@@ -203,13 +214,13 @@ class AzureInstanceMetadataService:
          )["compute"]
 
    @staticmethod
-   def getAuthToken(resource):
+   def getAuthToken(resource, clientId = None):
       """
       Get an authentication token via IMS
       """
       return AzureInstanceMetadataService._sendRequest(
          "identity/oauth2/token",
-         params = {"resource": resource}
+         params = {"resource": resource, "client_id": clientId}
          )["access_token"]
 
 ###############################################################################
@@ -220,9 +231,9 @@ class AzureKeyVault:
    """
    params  = {"api-version": "7.0"}
 
-   def __init__(self, keyvaultName):
+   def __init__(self, keyvaultName, clientId = None):
       self.uri     = "https://%s.vault.azure.net" % keyvaultName
-      self.token   = AzureInstanceMetadataService.getAuthToken("https://vault.azure.net")
+      self.token   = AzureInstanceMetadataService.getAuthToken("https://vault.azure.net", clientId)
       self.headers = {
          "Authorization": "Bearer %s" % self.token,
          "Content-Type":  "application/json"
@@ -420,11 +431,13 @@ def onboard(args):
    # Credentials (provided by user) to the existing HANA instance
    hanaSecretName  = "SapHana-%s" % args.HanaDbName
    hanaSecretValue = json.dumps({
-      "HanaHostname":   args.HanaHostname,
-      "HanaDbName":     args.HanaDbName,
-      "HanaDbUsername": args.HanaDbUsername,
-      "HanaDbPassword": args.HanaDbPassword,
-      "HanaDbSqlPort":  args.HanaDbSqlPort,
+      "HanaHostname":           args.HanaHostname,
+      "HanaDbName":             args.HanaDbName,
+      "HanaDbUsername":         args.HanaDbUsername,
+      "HanaDbPassword":         args.HanaDbPassword,
+      "HanaDbPasswordKeyVault": args.HanaDbPasswordKeyVault,
+      "HanaDbSqlPort":          args.HanaDbSqlPort,
+      "MsiClientId":            args.MsiClientId,
       })
    ctx.azKv.setSecret(hanaSecretName, hanaSecretValue)
 
@@ -490,10 +503,12 @@ def main():
    onbParser.add_argument("--HanaHostname", required=True, type=str, help="Hostname of the HDB to be monitored")
    onbParser.add_argument("--HanaDbName", required=True, type=str, help="Name of the tenant DB (empty if not MDC)")
    onbParser.add_argument("--HanaDbUsername", required=True, type=str, help="DB username to connect to the HDB tenant")
-   onbParser.add_argument("--HanaDbPassword", required=True, type=str, help="DB user password to connect to the HDB tenant")
+   onbParser.add_argument("--HanaDbPassword", required=False, type=str, help="DB user password to connect to the HDB tenant")
+   onbParser.add_argument("--HanaDbPasswordKeyVault", required=False, type=str, help="Link to the KeyVault secret containing DB user password to connect to the HDB tenant")
    onbParser.add_argument("--HanaDbSqlPort", required=True, type=int, help="SQL port of the tenant DB")
    onbParser.add_argument("--LogAnalyticsWorkspaceId", required=True, type=str, help="Workspace ID (customer ID) of the Log Analytics Workspace")
    onbParser.add_argument("--LogAnalyticsSharedKey", required=True, type=str, help="Shared key (primary) of the Log Analytics Workspace")
+   onbParser.add_argument("--MsiClientId", required=False, type=str, help="MSI Client ID used to get the access token from IMDS")
    monParser  = subParsers.add_parser("monitor", help="Execute the monitoring payload")
    monParser.set_defaults(func=monitor)
    args = parser.parse_args()
