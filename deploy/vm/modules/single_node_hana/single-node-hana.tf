@@ -16,20 +16,6 @@ module "common_setup" {
   use_existing_nsg  = var.use_existing_nsg
 }
 
-resource "azurerm_subnet" "hdbsubnet" {
-  name                 = "hdb-subnet"
-  resource_group_name  = var.az_resource_group
-  virtual_network_name = module.common_setup.vnet_name
-  address_prefix       = "10.0.0.0/24"
-  network_security_group_id = module.common_setup.nsg_id
-}
-
-resource "azurerm_subnet_network_security_group_association" "test" {
-  subnet_id                 = azurerm_subnet.hdbsubnet.id
-  network_security_group_id = module.common_setup.nsg_id
-}
-
-
 module "create_hdb" {
   source = "../create_hdb_node"
 

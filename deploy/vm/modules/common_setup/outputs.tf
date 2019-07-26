@@ -3,11 +3,11 @@ output "nsg_id" {
 }
 
 output "vnet_subnets" {
-  value = azurerm_virtual_network.vnet.subnets
+  value = module.vnet.vnet_subnets
 }
 
 output "vnet_name" {
-  value = azurerm_virtual_network.vnet.name
+  value = module.vnet.vnet_name
 }
 
 output "resource_group_name" {
