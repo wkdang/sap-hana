@@ -4,18 +4,19 @@
 set +e
 
 ExecuteCommand() {
-
     retryCounter=1
-    while [ $retryCounter -le 3 ]
+    sleepSeconds=1
+    while [ $retryCounter -le 5 ]
     do
-        echo "Try no $retryCounter: Command: $1"
-        # Sleep to allow the servers to recover in case the server was unable to serve the request
-        sleep $retryCounter
+        echo "Try # $retryCounter: Command: $1"
+        #Sleep to allow the servers to recover in case the server was unable to serve the request
+        sleep $sleepSeconds
         $1
         if [ $? -eq 0 ]; then
-            return
-        fi
-        retryCounter=$((retryCounter+1))
+	    return
+	fi
+	retryCounter=$((retryCounter+1))
+	sleepSeconds=$((2*sleepSeconds))
     done
     >&2 echo "Error executing command: $1"
     # Exit if all the retries failed
