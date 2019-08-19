@@ -13,10 +13,10 @@ ExecuteCommand() {
         sleep $sleepSeconds
         $1
         if [ $? -eq 0 ]; then
-	    return
-	fi
-	retryCounter=$((retryCounter+1))
-	sleepSeconds=$((2*sleepSeconds))
+	        return
+        fi
+        retryCounter=$((retryCounter+1))
+        sleepSeconds=$((2*sleepSeconds))
     done
     >&2 echo "Error executing command: $1"
     # Exit if all the retries failed
