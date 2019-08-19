@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#disable exit on error
+# disable exit on error
 set +e
 
 ExecuteCommand() {
@@ -9,7 +9,7 @@ ExecuteCommand() {
     while [ $retryCounter -le 3 ]
     do
         echo "Try no $retryCounter: Command: $1"
-        #Sleep to allow the servers to recover in case the server was unable to serve the request
+        # Sleep to allow the servers to recover in case the server was unable to serve the request
 	sleep $retryCounter
 	$1
         if [ $? -eq 0 ]; then
@@ -18,7 +18,7 @@ ExecuteCommand() {
 	retryCounter=$((retryCounter+1))
     done
     >&2 echo "Error executing command: $1"
-    #Exit if all the retries failed
+    # Exit if all the retries failed
     exit 1
 }
 
