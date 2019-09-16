@@ -15,53 +15,66 @@ import hashlib, hmac, base64
 import logging, logging.config
 import hashlib
 import re
+from azure_storage_logging.handlers import QueueStorageHandler
+from azure.mgmt.storage import StorageManagementClient
+from azure.common.credentials import BasicTokenAuthentication
 
 ###############################################################################
 
-PAYLOAD_VERSION              = "0.4.6"
-PAYLOAD_DIRECTORY            = os.path.dirname(os.path.realpath(__file__))
-STATE_FILE                   = "%s/sapmon.state" % PAYLOAD_DIRECTORY
-INITIAL_LOADHISTORY_TIMESPAN = -(60 * 1)
-TIME_FORMAT_HANA             = "%Y-%m-%d %H:%M:%S.%f"
-TIME_FORMAT_LOG_ANALYTICS    = "%a, %d %b %Y %H:%M:%S GMT"
-TIMEOUT_HANA                 = 5
-DEFAULT_CONSOLE_LOG_LEVEL    = logging.INFO
-DEFAULT_FILE_LOG_LEVEL       = logging.INFO
-LOG_FILENAME                 = "%s/sapmon.log" % PAYLOAD_DIRECTORY
-KEYVAULT_NAMING_CONVENTION   = "sapmon-kv-%s"
+PAYLOAD_VERSION                 = "0.4.6"
+PAYLOAD_DIRECTORY               = os.path.dirname(os.path.realpath(__file__))
+STATE_FILE                      = "%s/sapmon.state" % PAYLOAD_DIRECTORY
+INITIAL_LOADHISTORY_TIMESPAN    = -(60 * 1)
+TIME_FORMAT_HANA                = "%Y-%m-%d %H:%M:%S.%f"
+TIME_FORMAT_LOG_ANALYTICS       = "%a, %d %b %Y %H:%M:%S GMT"
+TIMEOUT_HANA                    = 5
+DEFAULT_CONSOLE_LOG_LEVEL       = logging.INFO
+DEFAULT_FILE_LOG_LEVEL          = logging.INFO
+LOG_FILENAME                    = "%s/sapmon.log" % PAYLOAD_DIRECTORY
+KEYVAULT_NAMING_CONVENTION      = "sapmon-kv-%s"
+STORAGE_QUEUE_NAMING_CONVENTION = "sapmon-que-%s"
 
 ###############################################################################
 
 LOG_CONFIG = {
-   "version": 1,
-   "disable_existing_loggers": True,
-   "formatters": {
-      "detailed": {
-         "format": "[%(process)d] %(asctime)s %(levelname).1s %(funcName)s:%(lineno)d %(message)s",
-      },
-      "simple": {
-         "format": "%(levelname)-8s %(message)s",
-      }
-   },
-   "handlers": {
-      "console": {
-         "class": "logging.StreamHandler",
-         "formatter": "simple",
-         "level": DEFAULT_CONSOLE_LOG_LEVEL,
-      },
-      "file": {
-         "class": "logging.handlers.RotatingFileHandler",
-         "formatter": "detailed",
-         "level": DEFAULT_FILE_LOG_LEVEL,
-         "filename": LOG_FILENAME,
-         "maxBytes": 10000000,
-         "backupCount": 10,
-      },
-   },
-   "root": {
-      "level": logging.DEBUG,
-      "handlers": ["console", "file"],
-   }
+    "version": 1,
+    "disable_existing_loggers": True,
+    "formatters": {
+        "detailed": {
+            "format": "[%(process)d] %(asctime)s %(levelname).1s %(funcName)s:%(lineno)d %(message)s",
+        },
+        "simple": {
+            "format": "%(levelname)-8s %(message)s",
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "level": DEFAULT_CONSOLE_LOG_LEVEL,
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "detailed",
+            "level": DEFAULT_FILE_LOG_LEVEL,
+            "filename": LOG_FILENAME,
+            "maxBytes": 10000000,
+            "backupCount": 10,
+        },
+        'queue': {
+            'account_name': 'mystorageaccountname',
+            'account_key': 'mystorageaccountkey',
+            'protocol': 'https',
+            'queue': 'logs',
+            'level': 'CRITICAL',
+            'class': 'azure_storage_logging.handlers.QueueStorageHandler',
+            'formatter': 'verbose',
+        },
+    },
+    "root": {
+        "level": logging.DEBUG,
+        "handlers": ["console", "file", "queue"],
+    }
 }
 
 ###############################################################################
@@ -458,6 +471,30 @@ x-ms-date:%s
 
 ###############################################################################
 
+class QueueStorage():
+    queueName = None
+    token = {}
+    subscriptionId = None
+    resourceGroup = None
+    def __init__(self, queueName,msiClientID,subscriptionId, resourceGroup):
+        """
+        Get the Queue Name
+        """
+        self.queueName=queueName
+        tokenResponse = AzureInstanceMetadataService.getAuthToken(resource="https://storage.azure.com/",msiClientID=msiClientID)
+        self.token["access_token"] = tokenResponse
+        self.subscriptionId = subscriptionId
+        self.resourceGroup = resourceGroup
+
+    def getAccessKey(self):
+        """
+        Get access key to the storage queue
+        """
+        storageclient = StorageManagementClient(credentials=BasicTokenAuthentication(self.token),subscription_id=self.subscriptionId)
+        storageKeys = storageclient.storage_accounts.list_keys(resource_group_name=self.resourceGroup,account_name=self.queueName)
+        print(storageKeys)
+################################################################################
+
 class _Context(object):
    """
    Internal context handler
@@ -477,6 +514,8 @@ class _Context(object):
       self.lastPull = None
       self.lastResultHashes = {}
       self.readStateFile()
+      self.storageQueue = QueueStorage(sapmonId=STORAGE_QUEUE_NAMING_CONVENTION.format(sapmonId), msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=self.vmInstance["subscriptionId"],resourceGroup=self.vmInstance["resourceGroupName"])
+      self.storageQueue.getAccessKey()
       return
 
    def readStateFile(self):
