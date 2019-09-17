@@ -75,7 +75,7 @@ LOG_CONFIG = {
     },
     "root": {
         "level": logging.DEBUG,
-        "handlers": ["console", "file", "queue"],
+        "handlers": ["console", "file"],
     }
 }
 
@@ -542,16 +542,28 @@ class _Context(object):
    def __init__(self, operation):
       logger.info("initializing context")
       self.vmInstance = AzureInstanceMetadataService.getComputeInstance(operation)
-      vmTags = dict(map(lambda s : s.split(':'), self.vmInstance["tags"].split(";")))
-      logger.debug("vmTags=%s" % vmTags)
-      self.sapmonId = vmTags["SapMonId"]
+      self.vmTags = dict(map(lambda s : s.split(':'), self.vmInstance["tags"].split(";")))
+      logger.debug("vmTags=%s" % self.vmTags)
+      self.sapmonId = self.vmTags["SapMonId"]
       logger.debug("sapmonId=%s " % self.sapmonId)
-      self.azKv = AzureKeyVault(KEYVAULT_NAMING_CONVENTION % self.sapmonId, vmTags.get("SapMonMsiClientId", None))
+      self.azKv = AzureKeyVault(KEYVAULT_NAMING_CONVENTION % self.sapmonId, self.vmTags.get("SapMonMsiClientId", None))
       if not self.azKv.exists():
          sys.exit(ERROR_KEYVAULT_NOT_FOUND)
       self.lastPull = None
       self.lastResultHashes = {}
       self.readStateFile()
+      self.addQueueLogHandler()
+      return
+ 
+   def addQueueLogHandler(self):
+      global logger
+      storageQueue = AzureStorageQueue(sapmonId=self.sapmonId, msiClientID=self.vmTags.get("SapMonMsiClientId", None),subscriptionId=self.vmInstance["subscriptionId"],resourceGroup=self.vmInstance["resourceGroupName"])
+      storageKey = storageQueue.getAccessKey()
+      queueStorageLogHandler = QueueStorageHandler(account_name=storageQueue.accountName,
+                                                   account_key=storageKey,
+                                                   protocol="https",
+                                                   queue=storageQueue.name)
+      logger.addHandler(queueStorageLogHandler)
       return
 
    def readStateFile(self):
@@ -813,14 +825,6 @@ def monitor(args):
 
 def initLogger(args):
    global logger
-   vmInstance = AzureInstanceMetadataService.getMetadata()
-   vmTags = dict(map(lambda s : s.split(':'), vmInstance["tags"].split(";")))
-   sapmonId = vmTags["SapMonId"]
-   storageQueue = AzureStorageQueue(sapmonId=sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=vmInstance["subscriptionId"],resourceGroup=vmInstance["resourceGroupName"])
-   storageKey = storageQueue.getAccessKey()
-   LOG_CONFIG["handlers"]["queue"]["account_name"] = storageQueue.accountName
-   LOG_CONFIG["handlers"]["queue"]["account_key"] = storageKey
-   LOG_CONFIG["handlers"]["queue"]["queue"] = storageQueue.name
    if args.verbose:
       LOG_CONFIG["handlers"]["console"]["formatter"] = "detailed"
       LOG_CONFIG["handlers"]["console"]["level"] = logging.DEBUG
