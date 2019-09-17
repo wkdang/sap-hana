@@ -21,19 +21,20 @@ from azure.common.credentials import BasicTokenAuthentication
 
 ###############################################################################
 
-PAYLOAD_VERSION                 = "0.4.6"
-PAYLOAD_DIRECTORY               = os.path.dirname(os.path.realpath(__file__))
-STATE_FILE                      = "%s/sapmon.state" % PAYLOAD_DIRECTORY
-INITIAL_LOADHISTORY_TIMESPAN    = -(60 * 1)
-TIME_FORMAT_HANA                = "%Y-%m-%d %H:%M:%S.%f"
-TIME_FORMAT_LOG_ANALYTICS       = "%a, %d %b %Y %H:%M:%S GMT"
-TIMEOUT_HANA                    = 5
-DEFAULT_CONSOLE_LOG_LEVEL       = logging.INFO
-DEFAULT_FILE_LOG_LEVEL          = logging.INFO
-LOG_FILENAME                    = "%s/sapmon.log" % PAYLOAD_DIRECTORY
-KEYVAULT_NAMING_CONVENTION      = "sapmon-kv-%s"
+PAYLOAD_VERSION                   = "0.4.6"
+PAYLOAD_DIRECTORY                 = os.path.dirname(os.path.realpath(__file__))
+STATE_FILE                        = "%s/sapmon.state" % PAYLOAD_DIRECTORY
+INITIAL_LOADHISTORY_TIMESPAN      = -(60 * 1)
+TIME_FORMAT_HANA                  = "%Y-%m-%d %H:%M:%S.%f"
+TIME_FORMAT_LOG_ANALYTICS         = "%a, %d %b %Y %H:%M:%S GMT"
+TIMEOUT_HANA                      = 5
+DEFAULT_CONSOLE_LOG_LEVEL         = logging.INFO
+DEFAULT_FILE_LOG_LEVEL            = logging.INFO
+DEFAULT_QUEUE_LOG_LEVEL           = logging.INFO
+LOG_FILENAME                      = "%s/sapmon.log" % PAYLOAD_DIRECTORY
+KEYVAULT_NAMING_CONVENTION        = "sapmon-kv-%s"
 STORAGE_ACCOUNT_NAMING_CONVENTION = "sapmonsto%s"
-STORAGE_QUEUE_NAMING_CONVENTION = "sapmon-que-%s"
+STORAGE_QUEUE_NAMING_CONVENTION   = "sapmon-que-%s"
 
 ###############################################################################
 
@@ -67,7 +68,7 @@ LOG_CONFIG = {
             'account_key': 'mystorageaccountkey',
             'protocol': 'https',
             'queue': 'logs',
-            'level': 'CRITICAL',
+            'level': DEFAULT_QUEUE_LOG_LEVEL,
             'class': 'azure_storage_logging.handlers.QueueStorageHandler',
             'formatter': 'simple',
         },
