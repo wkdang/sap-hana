@@ -32,6 +32,7 @@ DEFAULT_CONSOLE_LOG_LEVEL       = logging.INFO
 DEFAULT_FILE_LOG_LEVEL          = logging.INFO
 LOG_FILENAME                    = "%s/sapmon.log" % PAYLOAD_DIRECTORY
 KEYVAULT_NAMING_CONVENTION      = "sapmon-kv-%s"
+STORAGE_ACCOUNT_NAMING_CONVENTION = "sapmonsto%s"
 STORAGE_QUEUE_NAMING_CONVENTION = "sapmon-que-%s"
 
 ###############################################################################
@@ -68,7 +69,7 @@ LOG_CONFIG = {
             'queue': 'logs',
             'level': 'CRITICAL',
             'class': 'azure_storage_logging.handlers.QueueStorageHandler',
-            'formatter': 'verbose',
+            'formatter': 'simple',
         },
     },
     "root": {
@@ -472,16 +473,18 @@ x-ms-date:%s
 ###############################################################################
 
 class QueueStorage():
+    storageAccountName = None
     queueName = None
     token = {}
     subscriptionId = None
     resourceGroup = None
-    def __init__(self, queueName,msiClientID,subscriptionId, resourceGroup):
+    def __init__(self, sapmonId,msiClientID,subscriptionId, resourceGroup):
         """
         Get the Queue Name
         """
-        self.queueName=queueName
-        tokenResponse = AzureInstanceMetadataService.getAuthToken(resource="https://storage.azure.com/",msiClientID=msiClientID)
+        self.storageAccountName = STORAGE_ACCOUNT_NAMING_CONVENTION % sapmonId
+        self.queueName=STORAGE_QUEUE_NAMING_CONVENTION % sapmonId
+        tokenResponse = AzureInstanceMetadataService.getAuthToken(resource="https://management.azure.com/",msiClientId=msiClientID)
         self.token["access_token"] = tokenResponse
         self.subscriptionId = subscriptionId
         self.resourceGroup = resourceGroup
@@ -491,7 +494,7 @@ class QueueStorage():
         Get access key to the storage queue
         """
         storageclient = StorageManagementClient(credentials=BasicTokenAuthentication(self.token),subscription_id=self.subscriptionId)
-        storageKeys = storageclient.storage_accounts.list_keys(resource_group_name=self.resourceGroup,account_name=self.queueName)
+        storageKeys = storageclient.storage_accounts.list_keys(resource_group_name=self.resourceGroup,account_name=self.storageAccountName)
         print(storageKeys)
 ################################################################################
 
@@ -514,7 +517,7 @@ class _Context(object):
       self.lastPull = None
       self.lastResultHashes = {}
       self.readStateFile()
-      self.storageQueue = QueueStorage(sapmonId=STORAGE_QUEUE_NAMING_CONVENTION.format(sapmonId), msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=self.vmInstance["subscriptionId"],resourceGroup=self.vmInstance["resourceGroupName"])
+      self.storageQueue = QueueStorage(queueName=STORAGE_QUEUE_NAMING_CONVENTION % self.sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=self.vmInstance["subscriptionId"],resourceGroup=self.vmInstance["resourceGroupName"])
       self.storageQueue.getAccessKey()
       return
 
