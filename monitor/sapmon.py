@@ -287,6 +287,22 @@ class AzureInstanceMetadataService:
          )
 
    @staticmethod
+   def getMetadata():
+      """
+      Get the compute instance for the current VM via IMS
+      """     
+      computeInstance = None
+      try:
+         computeInstance = AzureInstanceMetadataService._sendRequest(
+            "instance",
+            headers = {"User-Agent": "SAP Monitor/%s (%s)" % (PAYLOAD_VERSION, "--")}
+            )["compute"]
+      except Exception as e:
+         print("Could not retrive VM instance: ",sys.exc_info(e))
+         return None
+      return computeInstance
+
+   @staticmethod
    def getComputeInstance(operation):
       """
       Get the compute instance for the current VM via IMS
@@ -781,9 +797,9 @@ def monitor(args):
    logger.info("monitor payload successfully completed")
    return
 
-def initializeLogger(args,operation):
+def initializeLogger(args):
    global logger
-   vmInstance = AzureInstanceMetadataService.getComputeInstance(operation)
+   vmInstance = AzureInstanceMetadataService.getMetadata()
    vmTags = dict(map(lambda s : s.split(':'), vmInstance["tags"].split(";")))
    sapmonId = vmTags["SapMonId"]
    storageQueue = QueueStorage(sapmonId=sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=vmInstance["subscriptionId"],resourceGroup=vmInstance["resourceGroupName"])
@@ -818,7 +834,7 @@ def main():
    monParser  = subParsers.add_parser("monitor", description="Monitor payload", help="Execute the monitoring payload")
    monParser.set_defaults(func=monitor)
    args = parser.parse_args()
-   initializeLogger(args,"initlogger")
+   initializeLogger(args)
    ctx = _Context(args.command)
    args.func(args)
 
