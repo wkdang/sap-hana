@@ -318,6 +318,21 @@ class AzureInstanceMetadataService:
       except Exception as e:
          logging.error("could not obtain instance metadata (%s)" % e)
       return computeInstance
+   
+   @staticmethod
+   def getAuthTokenNoLogging(resource, msiClientId = None):
+      """
+      Get an authentication token via IMDS
+      """
+      authToken = None
+      try:
+         authToken = AzureInstanceMetadataService._sendRequest(
+            "identity/oauth2/token",
+            params = {"resource": resource, "client_id": msiClientId}
+            )["access_token"]
+      except Exception as e:
+         sys.exit(ERROR_GETTING_AUTH_TOKEN)
+      return authToken
 
    @staticmethod
    def getAuthToken(resource, msiClientId = None):
@@ -500,7 +515,7 @@ class QueueStorage():
         """
         self.storageAccountName = STORAGE_ACCOUNT_NAMING_CONVENTION % sapmonId
         self.queueName=STORAGE_QUEUE_NAMING_CONVENTION % sapmonId
-        tokenResponse = AzureInstanceMetadataService.getAuthToken(resource="https://management.azure.com/",msiClientId=msiClientID)
+        tokenResponse = AzureInstanceMetadataService.getAuthTokenNoLogging(resource="https://management.azure.com/",msiClientId=msiClientID)
         self.token["access_token"] = tokenResponse
         self.subscriptionId = subscriptionId
         self.resourceGroup = resourceGroup
@@ -512,7 +527,7 @@ class QueueStorage():
         storageclient = StorageManagementClient(credentials=BasicTokenAuthentication(self.token),subscription_id=self.subscriptionId)
         storageKeys = storageclient.storage_accounts.list_keys(resource_group_name=self.resourceGroup,account_name=self.storageAccountName)
         if storageKeys == None or len(storageKeys.keys) <= 0 :
-           logger.error("Could not retrive storage keys of the storage account{0}".format(self.storageAccountName))
+           print("Could not retrive storage keys of the storage account{0}".format(self.storageAccountName))
            return None
         return storageKeys.keys[0].value
 ################################################################################
