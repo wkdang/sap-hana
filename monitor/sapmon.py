@@ -495,7 +495,10 @@ class QueueStorage():
         """
         storageclient = StorageManagementClient(credentials=BasicTokenAuthentication(self.token),subscription_id=self.subscriptionId)
         storageKeys = storageclient.storage_accounts.list_keys(resource_group_name=self.resourceGroup,account_name=self.storageAccountName)
-        print(storageKeys)
+        if storageKeys == None or len(storageKeys.keys) <= 0 :
+           logger.error("Could not retrive storage keys of the storage account{0}".format(self.storageAccountName))
+           return None
+        return storageKeys.keys[0].value
 ################################################################################
 
 class _Context(object):
@@ -777,7 +780,23 @@ def monitor(args):
 
    logger.info("monitor payload successfully completed")
    return
-      
+
+def initializeLogger(args,operation):
+   global logger
+   vmInstance = AzureInstanceMetadataService.getComputeInstance(operation)
+   vmTags = dict(map(lambda s : s.split(':'), vmInstance["tags"].split(";")))
+   sapmonId = vmTags["SapMonId"]
+   storageQueue = QueueStorage(sapmonId=sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=vmInstance["subscriptionId"],resourceGroup=vmInstance["resourceGroupName"])
+   storageKey = storageQueue.getAccessKey()
+   LOG_CONFIG["handlers"]["queue"]["account_name"] = storageQueue.storageAccountName
+   LOG_CONFIG["handlers"]["queue"]["account_key"] = storageKey
+   LOG_CONFIG["handlers"]["queue"]["queue"] = storageQueue.queueName
+   if args.verbose:
+      LOG_CONFIG["handlers"]["console"]["formatter"] = "detailed"
+      LOG_CONFIG["handlers"]["console"]["level"] = logging.DEBUG
+   logging.config.dictConfig(LOG_CONFIG)
+   logger = logging.getLogger(__name__)
+
 def main():
    global ctx, logger
    parser = argparse.ArgumentParser(description="SAP Monitor Payload")
@@ -799,11 +818,7 @@ def main():
    monParser  = subParsers.add_parser("monitor", description="Monitor payload", help="Execute the monitoring payload")
    monParser.set_defaults(func=monitor)
    args = parser.parse_args()
-   if args.verbose:
-      LOG_CONFIG["handlers"]["console"]["formatter"] = "detailed"
-      LOG_CONFIG["handlers"]["console"]["level"] = logging.DEBUG
-   logging.config.dictConfig(LOG_CONFIG)
-   logger = logging.getLogger(__name__)
+   initializeLogger(args,"initlogger")
    ctx = _Context(args.command)
    args.func(args)
 
