@@ -21,7 +21,7 @@ from azure.common.credentials import BasicTokenAuthentication
 
 ###############################################################################
 
-PAYLOAD_VERSION                   = "0.4.6"
+PAYLOAD_VERSION                   = "0.5.0"
 PAYLOAD_DIRECTORY                 = os.path.dirname(os.path.realpath(__file__))
 STATE_FILE                        = "%s/sapmon.state" % PAYLOAD_DIRECTORY
 INITIAL_LOADHISTORY_TIMESPAN      = -(60 * 1)
@@ -39,7 +39,7 @@ STORAGE_QUEUE_NAMING_CONVENTION   = "sapmon-que-%s"
 ###############################################################################
 
 LOG_CONFIG = {
-    "version": 1,
+    "version": 2,
     "disable_existing_loggers": True,
     "formatters": {
         "detailed": {
@@ -63,14 +63,14 @@ LOG_CONFIG = {
             "maxBytes": 10000000,
             "backupCount": 10,
         },
-        'queue': {
-            'account_name': 'mystorageaccountname',
-            'account_key': 'mystorageaccountkey',
-            'protocol': 'https',
-            'queue': 'logs',
-            'level': DEFAULT_QUEUE_LOG_LEVEL,
-            'class': 'azure_storage_logging.handlers.QueueStorageHandler',
-            'formatter': 'simple',
+        "queue": {
+            "account_name": "---",
+            "account_key": "---",
+            "protocol": "https",
+            "queue": "logs",
+            "level": DEFAULT_QUEUE_LOG_LEVEL,
+            "class": "azure_storage_logging.handlers.QueueStorageHandler",
+            "formatter": "simple",
         },
     },
     "root": {
@@ -504,31 +504,31 @@ x-ms-date:%s
 
 ###############################################################################
 
-class QueueStorage():
-    storageAccountName = None
-    queueName = None
+class AzureStorageQueue():
+    accountName = None
+    name = None
     token = {}
     subscriptionId = None
     resourceGroup = None
-    def __init__(self, sapmonId,msiClientID,subscriptionId, resourceGroup):
+    def __init__(self, sapmonId, msiClientID, subscriptionId, resourceGroup):
         """
-        Get the Queue Name
+        Retrieve the name of the storage account and storage queue
         """
-        self.storageAccountName = STORAGE_ACCOUNT_NAMING_CONVENTION % sapmonId
-        self.queueName=STORAGE_QUEUE_NAMING_CONVENTION % sapmonId
-        tokenResponse = AzureInstanceMetadataService.getAuthTokenNoLogging(resource="https://management.azure.com/",msiClientId=msiClientID)
+        self.accountName = STORAGE_ACCOUNT_NAMING_CONVENTION % sapmonId
+        self.name = STORAGE_QUEUE_NAMING_CONVENTION % sapmonId
+        tokenResponse = AzureInstanceMetadataService.getAuthTokenNoLogging(resource="https://management.azure.com/", msiClientId=msiClientID)
         self.token["access_token"] = tokenResponse
         self.subscriptionId = subscriptionId
         self.resourceGroup = resourceGroup
 
     def getAccessKey(self):
         """
-        Get access key to the storage queue
+        Get the access key to the storage queue
         """
-        storageclient = StorageManagementClient(credentials=BasicTokenAuthentication(self.token),subscription_id=self.subscriptionId)
-        storageKeys = storageclient.storage_accounts.list_keys(resource_group_name=self.resourceGroup,account_name=self.storageAccountName)
-        if storageKeys == None or len(storageKeys.keys) <= 0 :
-           print("Could not retrive storage keys of the storage account{0}".format(self.storageAccountName))
+        storageclient = StorageManagementClient(credentials=BasicTokenAuthentication(self.token), subscription_id=self.subscriptionId)
+        storageKeys = storageclient.storage_accounts.list_keys(resource_group_name=self.resourceGroup, account_name=self.accountName)
+        if storageKeys is None or len(storageKeys.keys) <= 0 :
+           print("Could not retrive storage keys of the storage account{0}".format(self.accountName))
            return None
         return storageKeys.keys[0].value
 ################################################################################
@@ -552,8 +552,6 @@ class _Context(object):
       self.lastPull = None
       self.lastResultHashes = {}
       self.readStateFile()
-      self.storageQueue = QueueStorage(sapmonId=self.sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=self.vmInstance["subscriptionId"],resourceGroup=self.vmInstance["resourceGroupName"])
-      self.storageQueue.getAccessKey()
       return
 
    def readStateFile(self):
@@ -813,16 +811,16 @@ def monitor(args):
    logger.info("monitor payload successfully completed")
    return
 
-def initializeLogger(args):
+def initLogger(args):
    global logger
    vmInstance = AzureInstanceMetadataService.getMetadata()
    vmTags = dict(map(lambda s : s.split(':'), vmInstance["tags"].split(";")))
    sapmonId = vmTags["SapMonId"]
-   storageQueue = QueueStorage(sapmonId=sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=vmInstance["subscriptionId"],resourceGroup=vmInstance["resourceGroupName"])
+   storageQueue = AzureStorageQueue(sapmonId=sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=vmInstance["subscriptionId"],resourceGroup=vmInstance["resourceGroupName"])
    storageKey = storageQueue.getAccessKey()
-   LOG_CONFIG["handlers"]["queue"]["account_name"] = storageQueue.storageAccountName
+   LOG_CONFIG["handlers"]["queue"]["account_name"] = storageQueue.accountName
    LOG_CONFIG["handlers"]["queue"]["account_key"] = storageKey
-   LOG_CONFIG["handlers"]["queue"]["queue"] = storageQueue.queueName
+   LOG_CONFIG["handlers"]["queue"]["queue"] = storageQueue.name
    if args.verbose:
       LOG_CONFIG["handlers"]["console"]["formatter"] = "detailed"
       LOG_CONFIG["handlers"]["console"]["level"] = logging.DEBUG
@@ -850,7 +848,7 @@ def main():
    monParser  = subParsers.add_parser("monitor", description="Monitor payload", help="Execute the monitoring payload")
    monParser.set_defaults(func=monitor)
    args = parser.parse_args()
-   initializeLogger(args)
+   initLogger(args)
    ctx = _Context(args.command)
    args.func(args)
 
