@@ -517,7 +517,7 @@ class _Context(object):
       self.lastPull = None
       self.lastResultHashes = {}
       self.readStateFile()
-      self.storageQueue = QueueStorage(queueName=STORAGE_QUEUE_NAMING_CONVENTION % self.sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=self.vmInstance["subscriptionId"],resourceGroup=self.vmInstance["resourceGroupName"])
+      self.storageQueue = QueueStorage(sapmonId=self.sapmonId, msiClientID=vmTags.get("SapMonMsiClientId", None),subscriptionId=self.vmInstance["subscriptionId"],resourceGroup=self.vmInstance["resourceGroupName"])
       self.storageQueue.getAccessKey()
       return
 
