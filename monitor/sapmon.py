@@ -39,7 +39,7 @@ STORAGE_QUEUE_NAMING_CONVENTION   = "sapmon-que-%s"
 ###############################################################################
 
 LOG_CONFIG = {
-    "version": 2,
+    "version": 1,
     "disable_existing_loggers": True,
     "formatters": {
         "detailed": {
