@@ -279,22 +279,6 @@ class AzureInstanceMetadataService:
          )
 
    @staticmethod
-   def getMetadata():
-      """
-      Get the compute instance for the current VM via IMS
-      """     
-      computeInstance = None
-      try:
-         computeInstance = AzureInstanceMetadataService._sendRequest(
-            "instance",
-            headers = {"User-Agent": "SAP Monitor/%s (%s)" % (PAYLOAD_VERSION, "--")}
-            )["compute"]
-      except Exception as e:
-         print("Could not retrive VM instance: ",sys.exc_info(e))
-         return None
-      return computeInstance
-
-   @staticmethod
    def getComputeInstance(operation):
       """
       Get the compute instance for the current VM via IMS
@@ -310,21 +294,6 @@ class AzureInstanceMetadataService:
       except Exception as e:
          logging.error("could not obtain instance metadata (%s)" % e)
       return computeInstance
-   
-   @staticmethod
-   def getAuthTokenNoLogging(resource, msiClientId = None):
-      """
-      Get an authentication token via IMDS
-      """
-      authToken = None
-      try:
-         authToken = AzureInstanceMetadataService._sendRequest(
-            "identity/oauth2/token",
-            params = {"resource": resource, "client_id": msiClientId}
-            )["access_token"]
-      except Exception as e:
-         sys.exit(ERROR_GETTING_AUTH_TOKEN)
-      return authToken
 
    @staticmethod
    def getAuthToken(resource, msiClientId = None):
@@ -507,7 +476,7 @@ class AzureStorageQueue():
         """
         self.accountName = STORAGE_ACCOUNT_NAMING_CONVENTION % sapmonId
         self.name = STORAGE_QUEUE_NAMING_CONVENTION % sapmonId
-        tokenResponse = AzureInstanceMetadataService.getAuthTokenNoLogging(resource="https://management.azure.com/", msiClientId=msiClientID)
+        tokenResponse = AzureInstanceMetadataService.getAuthToken(resource="https://management.azure.com/", msiClientId=msiClientID)
         self.token["access_token"] = tokenResponse
         self.subscriptionId = subscriptionId
         self.resourceGroup = resourceGroup
