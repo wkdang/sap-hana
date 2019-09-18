@@ -63,15 +63,6 @@ LOG_CONFIG = {
             "maxBytes": 10000000,
             "backupCount": 10,
         },
-        "queue": {
-            "account_name": "---",
-            "account_key": "---",
-            "protocol": "https",
-            "queue": "logs",
-            "level": DEFAULT_QUEUE_LOG_LEVEL,
-            "class": "azure_storage_logging.handlers.QueueStorageHandler",
-            "formatter": "simple",
-        },
     },
     "root": {
         "level": logging.DEBUG,
@@ -563,6 +554,9 @@ class _Context(object):
                                                    account_key=storageKey,
                                                    protocol="https",
                                                    queue=storageQueue.name)
+      queueStorageLogHandler.level = DEFAULT_QUEUE_LOG_LEVEL
+      formatter = logging.Formatter(LOG_CONFIG["formatters"]["detailed"]["format"])
+      queueStorageLogHandler.setFormatter(formatter)
       logger.addHandler(queueStorageLogHandler)
       return
 
