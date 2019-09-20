@@ -590,7 +590,7 @@ class _Context(object):
          formatter = logging.Formatter(LOG_CONFIG["formatters"]["detailed"]["format"])
          queueStorageLogHandler.setFormatter(formatter)
       except Exception as e:
-         logger.error("Could not add handler for the storage queue logging: %s "%sys.exc_info(e))
+         logger.error("could not add handler for the storage queue logging: %s "%sys.exc_info(e))
          return
       logger.addHandler(queueStorageLogHandler)
       return
