@@ -164,7 +164,7 @@ class SapHanaCheck(SapmonCheck):
             try:
                sqlUntilNow = " WHERE ADD_SECONDS(h.TIME, i.VALUE*(-1)) > '%s' AND" % lastRunServer
             except Exception as e:
-               logger.error("could not format lastRunServer=%s (%s)" % (str(lastRunServer), e))
+               logger.error("could not format lastRunServer=%s (%s)" % lastRunServer, e)
                return None
          logger.debug("sqlUntilNow=%s" % sqlUntilNow)
          sql = sql.replace(" WHERE", sqlUntilNow, 1)
