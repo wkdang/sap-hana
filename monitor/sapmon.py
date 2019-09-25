@@ -29,7 +29,7 @@ import traceback
 
 ###############################################################################
 
-PAYLOAD_VERSION                   = "0.6.1"
+PAYLOAD_VERSION                   = "0.6.3"
 PAYLOAD_DIRECTORY                 = os.path.dirname(os.path.realpath(__file__))
 STATE_FILE                        = "%s/sapmon.state" % PAYLOAD_DIRECTORY
 TIME_FORMAT_LOG_ANALYTICS         = "%a, %d %b %Y %H:%M:%S GMT"
