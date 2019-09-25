@@ -25,6 +25,7 @@ import pyhdb
 import re
 import requests
 import sys
+import traceback
 
 ###############################################################################
 
@@ -589,8 +590,8 @@ class _Context(object):
          queueStorageLogHandler.level = DEFAULT_QUEUE_LOG_LEVEL
          formatter = logging.Formatter(LOG_CONFIG["formatters"]["detailed"]["format"])
          queueStorageLogHandler.setFormatter(formatter)
-      except Exception as e:
-         logger.error("could not add handler for the storage queue logging: %s "%sys.exc_info(e))
+      except Exception:
+         logger.error("could not add handler for the storage queue logging: %s "%traceback.format_exc())
          return
       logger.addHandler(queueStorageLogHandler)
       return
