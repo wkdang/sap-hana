@@ -165,9 +165,9 @@ class SapHanaCheck(SapmonCheck):
             logger.info("time series query for check %s_%s has been run at %s, filter out only new records since then" % \
                (self.prefix, self.name, lastRunServer.strftime(self.TIME_FORMAT_HANA)))
             try:
-               sqlUntilNow = " WHERE ADD_SECONDS(h.TIME, i.VALUE*(-1)) > '%s' AND" % lastRunServer.strftime(self.TIME_FORMAT_HANA)
+               sqlUntilNow = " WHERE ADD_SECONDS(h.TIME, i.VALUE*(-1)) > '%s' AND" % lastRunServer
             except Exception as e:
-               logger.error("could not format lastRunServer=%s (%s)" % (str(lastRunServer), e))
+               logger.error("could not format lastRunServer=%s (%s)" % lastRunServer, e)
                return None
          logger.debug("sqlUntilNow=%s" % sqlUntilNow)
          sql = sql.replace(" WHERE", sqlUntilNow, 1)
