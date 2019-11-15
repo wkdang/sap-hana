@@ -1,6 +1,6 @@
 ---
 
-# Mount Azure File and Install Hana Studio on jumpbox
+# Install Hana Studio on jumpbox
 
 - name: Create dictionary with installation variant for HANA Studio 
   set_fact:
