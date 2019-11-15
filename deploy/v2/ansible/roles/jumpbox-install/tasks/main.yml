@@ -1,0 +1,8 @@
+---
+
+# Install Jumpbox Components
+- name: Install Jumpbox Components
+  include_role:
+    name: components-install
+    tasks_from: "{{ item }}.yml"
+  loop: "{{ component_list }}"
