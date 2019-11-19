@@ -104,26 +104,16 @@
   roles: 
     - { role: hdb-server-install }
 
-# Components Install on Linux Jumpboxes
-- hosts: jumpboxes_linux
-  become: true
-  become_user: root
+# Components Install on` Jumpboxes
+- hosts: jumpboxes
   vars:
     azure_files_mount_path: "/sapmnt"
     hana_software_loc: "{{ azure_files_mount_path }}/DB/DATA_UNITS"
     components: "{{ lookup('file', '../components.json') }}"
-    hana_client_install_path: "/usr/sap/shared"
-    hana_studio_install_path: "/usr/sap/hanastudio"
   pre_tasks:
     - name: Include output JSON
       include_vars:
         file: "/home/{{ ansible_user }}/output.json"
         name: output
-
-    - name: Create dictionary with Linux Jumpbox information from output.JSON
-      set_fact:
-        component_list: "{{ item.components }}"
-      loop: "{{ output.jumpboxes.linux|flatten(levels=1) }}"
-      when: item.name == 'jumpbox-linux'
   roles:
     - { role: jumpbox-install }

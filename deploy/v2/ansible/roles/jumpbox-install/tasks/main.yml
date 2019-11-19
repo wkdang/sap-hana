@@ -1,8 +1,32 @@
 ---
 
 # Install Jumpbox Components
-- name: Install Jumpbox Components
+- name: Create ostype varaible
+  set_fact: 
+     ostype: "{{ 'windows' if ansible_os_family == 'Windows' else 'linux' }}"
+
+- name: Create dictionary with Linux Jumpbox information from output.JSON
+  set_fact:
+    jumpbox_linux: "{{ item.components }}"
+  loop: "{{ output.jumpboxes.linux|flatten(levels=1) }}"
+  when: item.name == 'jumpbox-linux' and ostype == 'linux'
+
+- name: Create dictionary with Windows Jumpbox information from output.JSON
+  set_fact:
+    jumpbox_windows: "{{ item.components }}"
+  loop: "{{ output.jumpboxes.windows }}"
+  when: item.name == 'jumpbox-windows' and ostype =='windows'
+
+- name: Install Components on Windows Jumpbox
   include_role:
     name: components-install
     tasks_from: "{{ item }}.yml"
-  loop: "{{ component_list }}"
+  loop: "{{ jumpbox_windows }}"
+  when: ostype == 'windows'
+
+- name: Install Components on Linux Jumpbox
+  include_role:
+    name: components-install
+    tasks_from: "{{ item }}.yml"
+  loop: "{{ jumpbox_linux }}"
+  when: ostype == 'linux'
