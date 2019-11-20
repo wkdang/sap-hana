@@ -1,12 +1,18 @@
 ---
 
+- hosts: localhost
+  become: true
+  become_user: root
+  pre_tasks:
+    - name: Include output JSON
+      include_vars:
+        file: "/home/{{ ansible_user }}/output.json"
+        name: output
+
 # Prepare os, disks and mount points on Hana Database servers
 - hosts: hanadbnodes
   become: true
   become_user: root
-  vars:
-    disk_dict: {}
-    start: 0
   vars_files: 
      - "vars/packages.yml" 
   pre_tasks:
@@ -14,11 +20,6 @@
       include_vars:
         file: ../hdb_sizes.json
         name: hdb_sizes
-
-    - name: Include output JSON
-      include_vars:
-        file: "/home/{{ ansible_user }}/output.json"
-        name: output
 
     - name: Create dictionary with HANA database inforamtion from output.JSON
       set_fact: 
@@ -30,32 +31,18 @@
     - { role: os-disk-setup }
 
 # Mount Azure File share on all linux servers
-- hosts: os-independent
+- hosts: all_linux_servers
   become: true
   become_user: root
-  vars:
-    azure_files_mount_path: "/sapmnt"
-  pre_tasks:
-    - name: Include output JSON
-      include_vars:
-        file: "/home/{{ ansible_user }}/output.json"
-        name: output
   roles:
-    - { role: mount-azure-files, when: output.software.storage_account.file_share_name == 'FileStorage' }
+    - { role: mount-azure-files, when: output.software.storage_account_sapbits.file_share_name == 'bits' }
 
 # Download SAP Media on Azure File Share
 - hosts: localhost
   connection: local
   become: true
   become_user: root
-  vars: 
-    azure_files_mount_path: "/sapmnt"
   pre_tasks:
-    - name: Include output JSON
-      include_vars:
-        file: "/home/{{ ansible_user }}/output.json"
-        name: output 
-
     - name: Create dictionary with HANA database inforamtion from output.JSON
       set_fact:
         hana_database: "{{ item }}"
@@ -68,52 +55,9 @@
 - hosts: hanadbnodes
   become: true
   become_user: root
-  vars:
-    components_list: []
-    azure_files_mount_path: "/sapmnt"
-    hana_install_path: "/hana/shared/install"
-    hana_software_loc: "{{ azure_files_mount_path }}/DB/DATA_UNITS"
-    components: "{{ lookup('file', '../components.json') }}"
-    hana_client_install_path: "/usr/sap/shared"
-  pre_tasks:
-    - name: Include output JSON
-      include_vars:
-        file: "/home/{{ ansible_user }}/output.json"
-        name: output
- 
-    - name: Create dictionary with HANA database inforamtion from output.JSON
-      set_fact:
-        hana_database: "{{ item }}"
-      loop: "{{ output.databases|flatten(levels=1) }}"
-      when: item.platform == 'HANA'
-
-    - name: Create HANA components list from output JSON
-      set_fact:
-        components_list: "{{ components_list + [ item.key ] }}"
-      with_dict: "{{ hana_database.components }}"
-   
-    - name: Merge HANA Components list with its depends on components
-      set_fact:
-        install_comp: "{{  [ item.depends_on ] + components_list }}"
-      loop: "{{ components }}"
-      when: 'item.component in components_list'
-
-    - name: Create unique list of HANA Components
-      set_fact:
-        hana_components: "{{ install_comp|flatten(levels=1)|unique }}"
   roles: 
     - { role: hdb-server-install }
 
-# Components Install on` Jumpboxes
 - hosts: jumpboxes
-  vars:
-    azure_files_mount_path: "/sapmnt"
-    hana_software_loc: "{{ azure_files_mount_path }}/DB/DATA_UNITS"
-    components: "{{ lookup('file', '../components.json') }}"
-  pre_tasks:
-    - name: Include output JSON
-      include_vars:
-        file: "/home/{{ ansible_user }}/output.json"
-        name: output
   roles:
-    - { role: jumpbox-install }
+    - { role: jumpbox-install }  
