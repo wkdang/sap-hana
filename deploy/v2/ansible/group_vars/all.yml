@@ -10,3 +10,6 @@ hana_client_install_path: "/usr/sap/shared"
 output: "{{ hostvars['localhost'].output }}"
 sap_media_download_script: "/home/{{ansible_user}}/sap-hana/deploy/v2/ansible"
 jumpbox_comp_dict: {}
+hana_database: "{{ hostvars['localhost'].hana_database }}"
+sap_media_download_script_loc: "/home/{{ansible_user}}/sap-hana/deploy/v2"
+media_copy_loc: C:\Users\{{ ansible_user }}\install

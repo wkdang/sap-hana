@@ -9,6 +9,12 @@
         file: "/home/{{ ansible_user }}/output.json"
         name: output
 
+    - name: Create dictionary with HANA database inforamtion from output.JSON
+      set_fact:
+        hana_database: "{{ item }}"
+      loop: "{{ output.databases|flatten(levels=1) }}"
+      when: item.platform == 'HANA'
+
 # Prepare os, disks and mount points on Hana Database servers
 - hosts: hanadbnodes
   become: true
@@ -20,34 +26,22 @@
       include_vars:
         file: ../hdb_sizes.json
         name: hdb_sizes
-
-    - name: Create dictionary with HANA database inforamtion from output.JSON
-      set_fact: 
-        hana_database: "{{ item }}"
-      loop: "{{ output.databases|flatten(levels=1) }}"
-      when: item.platform == 'HANA'
   roles:
-    - { role: os-preparation }
-    - { role: os-disk-setup }
+#    - { role: os-preparation }
+#    - { role: os-disk-setup }
 
 # Mount Azure File share on all linux servers
 - hosts: all_linux_servers
   become: true
   become_user: root
   roles:
-    - { role: mount-azure-files, when: output.software.storage_account_sapbits.file_share_name == 'bits' }
+#    - { role: mount-azure-files, when: output.software.storage_account_sapbits.file_share_name != "" }
 
 # Download SAP Media on Azure File Share
 - hosts: localhost
   connection: local
   become: true
   become_user: root
-  pre_tasks:
-    - name: Create dictionary with HANA database inforamtion from output.JSON
-      set_fact:
-        hana_database: "{{ item }}"
-      loop: "{{ output.databases|flatten(levels=1) }}"
-      when: item.platform == 'HANA'
   roles:
     - { role: sap-media-download }
 
@@ -56,8 +50,8 @@
   become: true
   become_user: root
   roles: 
-    - { role: hdb-server-install }
+#    - { role: hdb-server-install }
 
-- hosts: jumpboxes
+- hosts: all_jumpboxes
   roles:
     - { role: jumpbox-install }  

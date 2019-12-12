@@ -10,6 +10,7 @@ module "common_infrastructure" {
   infrastructure      = var.infrastructure
   software            = var.software
   options             = var.options
+  databases           = var.databases
 }
 
 # Create Jumpboxes and RTI box
@@ -26,6 +27,7 @@ module "jumpbox" {
   storage-bootdiag  = module.common_infrastructure.storage-bootdiag
   output-json       = module.output_files.output-json
   ansible-inventory = module.output_files.ansible-inventory
+  random-id         = module.common_infrastructure.random-id
 }
 
 # Create HANA database nodes
@@ -72,6 +74,8 @@ resource "null_resource" "ansible_playbook" {
   # Run Ansible Playbook on jumpbox if ansible_execution set to true
   provisioner "remote-exec" {
     inline = [
+      # Registers the current deployment state with Azure's Metadata Service (IMDS)
+      "curl -i -H \"Metadata: \"true\"\" -H \"user-agent: SAP AutoDeploy/${var.auto-deploy-version}; scenario=${var.scenario}; deploy-status=Terraform_finished\" http://169.254.169.254/metadata/instance?api-version=${var.api-version}",
       "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES",
       "export ANSIBLE_HOST_KEY_CHECKING=False",
       var.options.ansible_execution ? "ansible-playbook -i hosts ~/sap-hana/deploy/v2/ansible/sap_playbook.yml" : "ansible-playbook --version"
