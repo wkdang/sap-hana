@@ -17,11 +17,9 @@
 - name: Install pip for python2
   command: |
     python /usr/bin/get-pip.py
-
+    
 - name: Install pywinrm
-  pip:
-    name: pywinrm
-    state: latest
+  command: "pip install pywinrm==0.3.0"
 
 - name: check pywinrm
   command: pip list pywinrm
