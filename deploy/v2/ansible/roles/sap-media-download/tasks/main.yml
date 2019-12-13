@@ -45,12 +45,15 @@
   pip:
     name: pywinrm
     state: latest
-    executable: pip2
 
 - name: check pywinrm
-  command: pip2 list pywinrm|grep pywinrm
+  command: pip list pywinrm
   register: test
  
 - debug: var=test
 
-
+- name: Install pywinrm
+  pip:
+    name: pywinrm
+    state: latest
+    executable: pip3
