@@ -13,6 +13,21 @@
   get_url:
     url: https://bootstrap.pypa.io/get-pip.py
     dest: /usr/bin/get-pip.py
+    
+- name: Install pip for python2
+  command: |
+    python /usr/bin/get-pip.py
+
+- name: Install pywinrm
+  pip:
+    name: pywinrm
+    state: latest
+
+- name: check pywinrm
+  command: pip list pywinrm
+  register: test
+ 
+- debug: var=test
 
 - name: Install pip for python3
   command: |
@@ -36,24 +51,3 @@
     src: "{{ azure_files_mount_path }}/DB/{{bits_file.stdout}}"
     dest: "{{ azure_files_mount_path }}/DB"
     remote_src: yes
-
-- name: Install pip for python2
-  command: |
-    python2 /usr/bin/get-pip.py
-
-- name: Install pywinrm
-  pip:
-    name: pywinrm
-    state: latest
-
-- name: check pywinrm
-  command: pip list pywinrm
-  register: test
- 
-- debug: var=test
-
-- name: Install pywinrm
-  pip:
-    name: pywinrm
-    state: latest
-    executable: pip3
