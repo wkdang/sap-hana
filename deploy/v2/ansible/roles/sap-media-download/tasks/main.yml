@@ -46,3 +46,11 @@
     name: pywinrm
     state: latest
     executable: pip2
+
+- name: check pywinrm
+  command: pip2 list pywinrm|grep pywinrm
+  register: test
+ 
+- debug: var=test
+
+

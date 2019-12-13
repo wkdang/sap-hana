@@ -50,7 +50,7 @@
   become: true
   become_user: root
   roles: 
-    - { role: hdb-server-install }
+#    - { role: hdb-server-install }
 
 - hosts: all_jumpboxes
   roles:
