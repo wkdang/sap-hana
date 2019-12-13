@@ -19,9 +19,7 @@
     python /usr/bin/get-pip.py
     
 - name: Install pywinrm
-  pip:
-    name: pywinrm
-    state: latest
+  command: "pip install --ignore-installed pywinrm==0.2.2"
 
 - name: check pywinrm
   command: pip list pywinrm
