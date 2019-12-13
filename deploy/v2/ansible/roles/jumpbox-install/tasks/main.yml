@@ -20,5 +20,7 @@
 - name: Install Components on Jumpbox
   include_role:
     name: components-install
-    tasks_from: "{{ item }}.yml"
+    tasks_from: "{{ component }}.yml"
   loop: "{{ jumpbox_comp_dict[ostype].components }}"
+  loop_control:
+    loop_var: component
