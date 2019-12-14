@@ -14,6 +14,9 @@
     url: https://bootstrap.pypa.io/get-pip.py
     dest: /usr/bin/get-pip.py
     
+- name: Install pyOpenSSL
+  command: "pip install pyOpenSSL --upgrade"
+  
 - name: Install pip for python2
   command: |
     python /usr/bin/get-pip.py
@@ -49,6 +52,3 @@
     src: "{{ azure_files_mount_path }}/DB/{{bits_file.stdout}}"
     dest: "{{ azure_files_mount_path }}/DB"
     remote_src: yes
-    
-- name: Install pywinrm
-  command: "pip install --ignore-installed pywinrm"
