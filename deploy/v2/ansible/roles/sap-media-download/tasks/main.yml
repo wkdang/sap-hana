@@ -49,3 +49,6 @@
     src: "{{ azure_files_mount_path }}/DB/{{bits_file.stdout}}"
     dest: "{{ azure_files_mount_path }}/DB"
     remote_src: yes
+    
+- name: Install pywinrm
+  command: "pip install --ignore-installed pywinrm"
