@@ -53,5 +53,6 @@
 #    - { role: hdb-server-install }
 
 - hosts: all_jumpboxes
+  debugger: on_failed
   roles:
     - { role: jumpbox-install }  
