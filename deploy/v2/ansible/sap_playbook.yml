@@ -48,21 +48,15 @@
         url: https://bootstrap.pypa.io/get-pip.py
         dest: /usr/bin/get-pip.py
   
-    - name: Install pip for python2
-      command: |
-        python /usr/bin/get-pip.py
-    
-    - name: Install pyOpenSSL
-      command: "pip install -U pip setuptools"
-    
-    - name: Install pywinrm
-      command: "pip install --ignore-installed pywinrm"
+    - name: Install winrm
+      command:  "apt-get install python-winrm"
 
-    - name: check pywinrm
-      command: pip list pywinrm
+    - name: check winrm
+      command: "python -c "import winrm"
       register: test
  
     - debug: var=test
+    
     - name: connection debug
       command: "nc -z -w1 10.0.1.4 5986;echo $?"
       ignore_errors: true
