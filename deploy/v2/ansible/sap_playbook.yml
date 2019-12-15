@@ -35,7 +35,7 @@
   become: true
   become_user: root
   roles:
- #   - { role: mount-azure-files, when: output.software.storage_account_sapbits.file_share_name != "" }
+    - { role: mount-azure-files, when: output.software.storage_account_sapbits.file_share_name != "" }
 
 # Download SAP Media on Azure File Share
 - hosts: localhost
@@ -43,7 +43,7 @@
   become: true
   become_user: root
   roles:
-#    - { role: sap-media-download }
+    - { role: sap-media-download }
 
 # Hana DB Components install 
 - hosts: hanadbnodes
