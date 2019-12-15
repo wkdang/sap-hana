@@ -64,7 +64,8 @@
  
     - debug: var=test
     - name: connection debug
-      command: "nc -z -w1 10.0.1.4 5985;echo $?"
+      command: "nc -z -w1 10.0.1.4 5986;echo $?"
+      ignore_errors: true
       register: test_conn
       
     - debug: var=test_conn
