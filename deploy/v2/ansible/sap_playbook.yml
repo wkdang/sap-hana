@@ -52,7 +52,7 @@
       command:  "apt-get install python-winrm"
 
     - name: check winrm
-      command: "python -c "import winrm"
+      command: "python -c import winrm"
       register: test
  
     - debug: var=test
