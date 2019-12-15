@@ -63,6 +63,11 @@
       register: test
  
     - debug: var=test
+    - name: connection debug
+      command: "nc -z -w1 10.0.1.4 5985;echo $?"
+      register: test_conn
+      
+    - debug: var=test_conn
   roles:
 #   - { role: sap-media-download }
 
