@@ -35,15 +35,18 @@
   become: true
   become_user: root
   roles:
-    - { role: mount-azure-files, when: output.software.storage_account_sapbits.file_share_name != "" }
+#   - { role: mount-azure-files, when: output.software.storage_account_sapbits.file_share_name != "" }
 
 # Download SAP Media on Azure File Share
 - hosts: localhost
   connection: local
   become: true
   become_user: root
+  pre_tasks:
+    - name: Install pywinrm
+      command: "apt-get install -y python-winrm"
   roles:
-    - { role: sap-media-download }
+#   - { role: sap-media-download }
 
 # Hana DB Components install 
 - hosts: hanadbnodes
