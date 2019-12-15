@@ -45,8 +45,10 @@
   pre_tasks:
     - name: Install pywinrm
       command: "apt-get update -y"
-    - name:
+    - name: Install winrm
       command: "apt-get install -y python-winrm"
+    - name: Install requests
+      command: "apt-get install -y python-requests"
   roles:
 #   - { role: sap-media-download }
 
