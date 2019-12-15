@@ -53,10 +53,10 @@
         python /usr/bin/get-pip.py
     
     - name: Install pyOpenSSL
-      command: "pip install pyOpenSSL --upgrade"
+      command: "pip install -U pip setuptools"
     
     - name: Install pywinrm
-      command: "pip2.7 install --ignore-installed pywinrm"
+      command: "pip install --ignore-installed pywinrm"
 
     - name: check pywinrm
       command: pip list pywinrm
