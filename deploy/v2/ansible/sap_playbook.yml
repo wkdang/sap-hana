@@ -52,7 +52,7 @@
   roles: 
 #    - { role: hdb-server-install }
 
-- hosts: all_jumpboxes
+- hosts: jumpboxes_windows
   pre_tasks:
     - win_ping:
   roles:
