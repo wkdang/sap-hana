@@ -43,12 +43,26 @@
   become: true
   become_user: root
   pre_tasks:
+    - name: Download pip
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /usr/bin/get-pip.py
+  
+    - name: Install pip for python2
+      command: |
+        python /usr/bin/get-pip.py
+    
+    - name: Install pyOpenSSL
+      command: "pip install pyOpenSSL --upgrade"
+    
     - name: Install pywinrm
-      command: "apt-get update -y"
-    - name: Install winrm
-      command: "apt-get install -y python-winrm"
-    - name: Install requests
-      command: "apt-get install -y python-requests"
+      command: "pip2.7 install --ignore-installed pywinrm"
+
+    - name: check pywinrm
+      command: pip list pywinrm
+      register: test
+ 
+    - debug: var=test
   roles:
 #   - { role: sap-media-download }
 
