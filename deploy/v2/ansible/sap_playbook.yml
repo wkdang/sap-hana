@@ -66,13 +66,6 @@
   roles:
 #   - { role: sap-media-download }
 
-# Hana DB Components install 
-- hosts: hanadbnodes
-  become: true
-  become_user: root
-  roles: 
-#    - { role: hdb-server-install }
-
 - hosts: jumpboxes_windows
   pre_tasks:
     - win_ping:
