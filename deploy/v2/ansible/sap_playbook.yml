@@ -44,6 +44,8 @@
   become_user: root
   pre_tasks:
     - name: Install pywinrm
+      command: "apt-get update -y"
+    - name:
       command: "apt-get install -y python-winrm"
   roles:
 #   - { role: sap-media-download }
