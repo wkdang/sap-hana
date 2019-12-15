@@ -44,9 +44,7 @@
   become_user: root
   pre_tasks:
     - name: Download pip
-      get_url:
-        url: https://bootstrap.pypa.io/get-pip.py
-        dest: /usr/bin/get-pip.py
+      command: "apt-get update"
   
     - name: Install winrm
       command:  "apt-get install python-winrm"
