@@ -3,18 +3,9 @@
 # This is temperary solution to get bits from SMP
 
 # Due to the file permission limitation with blob (always 770), we currently only support using azure files.
-- name: Upgrade all packages to the latest version
-  apt:
-    name: "*"
-    state: latest
-    
 - name: Install unzip
   apt: 
-    name: 
-      - unzip
-      - python-pip
-      - libffi-dev 
-      - libssl-dev
+    name: unzip
     state: latest
     force_apt_get: yes
 
