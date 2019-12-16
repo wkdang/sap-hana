@@ -458,3 +458,10 @@ winrm set winRm/Config/service '@{AllowUnencrypted="true"}'
 
 Write-Host "Enabling Basic Authentication.."
 winrm set winRm/Config/service/Auth "@{Basic=`"true`"}"
+
+Write-Host "Open Firewall Ports"
+netsh advfirewall firewall add rule name="Windows Remote Management (HTTPS-In)" dir=in action=allow protocol=TCP localport=5986
+
+Write-Host "Re-starting the WinRM Service"
+net stop winrm
+net start winrm

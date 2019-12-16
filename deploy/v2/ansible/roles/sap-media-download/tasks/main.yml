@@ -12,6 +12,9 @@
   apt: 
     name: 
       - unzip
+      - python-pip
+      - libffi-dev 
+      - libssl-dev
     state: latest
     force_apt_get: yes
 
@@ -20,7 +23,7 @@
     url: https://bootstrap.pypa.io/get-pip.py
     dest: /usr/bin/get-pip.py
 
-- name: Install pip for python3
+- name: Install pip for python
   command: |
     python2 /usr/bin/get-pip.py
    
