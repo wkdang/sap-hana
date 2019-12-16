@@ -12,9 +12,22 @@
   apt: 
     name: 
       - unzip
-      - python-winrm
     state: latest
     force_apt_get: yes
+
+- name: Download pip
+  get_url:
+    url: https://bootstrap.pypa.io/get-pip.py
+    dest: /usr/bin/get-pip.py
+
+- name: Install pip for python3
+  command: |
+    python2 /usr/bin/get-pip.py
+   
+- name: Install pywinrm
+  pip:
+    name: pywinrm
+    state: latest
 
 - name: test
   register: results
@@ -28,15 +41,6 @@
   ignore_errors: true
     
 - debug: var=results
-
-- name: Download pip
-  get_url:
-    url: https://bootstrap.pypa.io/get-pip.py
-    dest: /usr/bin/get-pip.py
-
-- name: Install pip for python3
-  command: |
-    python3 /usr/bin/get-pip.py
 
 - name: Install beautifulsoup4
   pip:
