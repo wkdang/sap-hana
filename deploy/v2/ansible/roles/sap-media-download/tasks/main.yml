@@ -21,7 +21,9 @@
   args:
     stdin: |
         import winrm
-        print(winrm)
+        session = winrm.Session('10.0.1.4', auth=('azureadm','Sap@hana2019!'))
+        result = session.run_ps("hostname")
+        print(result.std_out)
   command: /usr/bin/python
   ignore_errors: true
     
