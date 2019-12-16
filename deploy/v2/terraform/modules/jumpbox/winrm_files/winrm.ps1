@@ -452,12 +452,11 @@ Else
 }
 Write-VerboseLog "PS Remoting has been successfully configured for Ansible."
 
-
-Write-Host "Allowing HTTP traffic.."
-winrm set winRm/Config/service '@{AllowUnencrypted="true"}'
-
 Write-Host "Enabling Basic Authentication.."
-winrm set winRm/Config/service/Auth "@{Basic=`"true`"}"
+winrm set winRm/Config/service/Auth '@{Basic="true"}'
+winrm set winRm/Config/client/Auth '@{Basic="true"}'
+
+winrm set winRm/Config/service '@{AllowUnencrypted="true"}'
 
 Write-Host "Open Firewall Ports"
 netsh advfirewall firewall add rule name="Windows Remote Management (HTTPS-In)" dir=in action=allow protocol=TCP localport=5986
