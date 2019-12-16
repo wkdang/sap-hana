@@ -16,12 +16,17 @@
     state: latest
     force_apt_get: yes
 
-- name: check winrm
-  command: "python -c import winrm"
-  register: test
-  
-- debug: var=test
+- name: test
+  register: results
+  args:
+    stdin: |
+        import winrm
+        print(winrm)
+  command: /usr/bin/python
+  ignore_errors: true
     
+- debug: var=results
+
 - name: Download pip
   get_url:
     url: https://bootstrap.pypa.io/get-pip.py
