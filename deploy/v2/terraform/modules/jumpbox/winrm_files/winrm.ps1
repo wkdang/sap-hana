@@ -451,3 +451,15 @@ Else
     Throw "Unable to establish an HTTP or HTTPS remoting session."
 }
 Write-VerboseLog "PS Remoting has been successfully configured for Ansible."
+
+
+winrm set winrm/config/client/auth '@{Basic="true"}'
+winrm set winrm/config/client '@{AllowUnencrypted="true"}'
+
+winrm quickconfig -q
+winrm set winrm/config/winrs ‘@{MaxMemoryPerShellMB=”512″}’
+winrm set winrm/config ‘@{MaxTimeoutms=”1800000″}’
+winrm set winrm/config/service ‘@{AllowUnencrypted=”true”}’
+winrm set winrm/config/service/auth ‘@{Basic=”true”}’
+Start-Service WinRM
+set-service WinRM -StartupType Automatic
