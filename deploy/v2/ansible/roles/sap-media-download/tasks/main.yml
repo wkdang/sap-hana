@@ -31,22 +31,6 @@
   get_url:
     url: https://bootstrap.pypa.io/get-pip.py
     dest: /usr/bin/get-pip.py
-  
-- name: Install pip for python2
-  command: |
-    python /usr/bin/get-pip.py
-    
-- name: Install pyOpenSSL
-  command: "pip install pyOpenSSL --upgrade"
-    
-- name: Install pywinrm
-  command: "pip2.7 install --ignore-installed pywinrm"
-
-- name: check pywinrm
-  command: pip list pywinrm
-  register: test
- 
-- debug: var=test
 
 - name: Install pip for python3
   command: |
