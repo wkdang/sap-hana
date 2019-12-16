@@ -42,6 +42,10 @@
     
 - debug: var=results
 
+- name: Install pip for python3
+  command: |
+    python3 /usr/bin/get-pip.py
+
 - name: Install beautifulsoup4
   pip:
     name: beautifulsoup4
