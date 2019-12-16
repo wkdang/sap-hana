@@ -217,15 +217,6 @@ resource "azurerm_virtual_machine" "vm-windows" {
     custom_data    = "Param($ComputerName = \"${var.jumpboxes.windows[count.index].name}\") ${file("${path.module}/winrm_files/winrm.ps1")}"
   }
 
-  os_profile_secrets {
-    source_vault_id = azurerm_key_vault.key-vault.id
-
-    vault_certificates {
-      certificate_url   = azurerm_key_vault_certificate.key-vault-cert[count.index].secret_id
-      certificate_store = "My"
-    }
-  }
-
   os_profile_windows_config {
     provision_vm_agent = true
 

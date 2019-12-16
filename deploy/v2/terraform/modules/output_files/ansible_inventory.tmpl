@@ -1,6 +1,6 @@
 [jumpboxes_windows]
 %{~ for jumpbox-windows in jumpboxes-windows }
-${ips-jumpboxes-windows[index(jumpboxes-windows, jumpbox-windows)]}  ansible_connection=winrm  ansible_user=${jumpbox-windows.authentication.username} ansible_pass=${jumpbox-windows.authentication.password}  ansible_ssh_port=5986  ansible_winrm_server_cert_validation=ignore
+${ips-jumpboxes-windows[index(jumpboxes-windows, jumpbox-windows)]}  ansible_connection=winrm  ansible_user=${jumpbox-windows.authentication.username} ansible_password=${jumpbox-windows.authentication.password}  ansible_ssh_port=5985  ansible_winrm_server_cert_validation=ignore
 %{~ endfor }
 
 [jumpboxes_linux]
@@ -15,7 +15,7 @@ ${ips-jumpboxes-linux[index(jumpboxes-linux, jumpbox-linux)]}  ansible_connectio
 
 [all_jumpboxes]
 %{~ for jumpbox-windows in jumpboxes-windows }
-${ips-jumpboxes-windows[index(jumpboxes-windows, jumpbox-windows)]}  ansible_connection=winrm  ansible_user=${jumpbox-windows.authentication.username} ansible_pass=${jumpbox-windows.authentication.password}  ansible_ssh_port=5986  ansible_winrm_server_cert_validation=ignore
+${ips-jumpboxes-windows[index(jumpboxes-windows, jumpbox-windows)]}  ansible_connection=winrm  ansible_user=${jumpbox-windows.authentication.username} ansible_password=${jumpbox-windows.authentication.password}  ansible_ssh_port=5985  ansible_winrm_server_cert_validation=ignore
 %{~ endfor }
 %{~ for jumpbox-linux in jumpboxes-linux }
 %{~ if jumpbox-linux.destroy_after_deploy != "true" && jumpbox-linux.authentication.type == "key" }
