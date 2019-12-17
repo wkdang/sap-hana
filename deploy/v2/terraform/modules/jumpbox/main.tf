@@ -214,27 +214,11 @@ resource "azurerm_virtual_machine" "vm-windows" {
     computer_name  = var.jumpboxes.windows[count.index].name
     admin_username = var.jumpboxes.windows[count.index].authentication.username
     admin_password = var.jumpboxes.windows[count.index].authentication.password
-    custom_data    = "Param($ComputerName = \"${var.jumpboxes.windows[count.index].name}\") ${file("${path.module}/winrm_files/winrm.ps1")}"
+    custom_data    = "Param($ComputerName = \"${var.jumpboxes.windows[count.index].name}\") ${file("${path.module}/install_winrm.ps1")}"
   }
 
   os_profile_windows_config {
     provision_vm_agent = true
-
-    # Auto-Login's required to configure WinRM
-    additional_unattend_config {
-      pass         = "oobeSystem"
-      component    = "Microsoft-Windows-Shell-Setup"
-      setting_name = "AutoLogon"
-      content      = "<AutoLogon><Password><Value>${var.jumpboxes.windows[count.index].authentication.password}</Value></Password><Enabled>true</Enabled><LogonCount>1</LogonCount><Username>${var.jumpboxes.windows[count.index].authentication.username}</Username></AutoLogon>"
-    }
-
-    # Unattend config is to enable basic auth in WinRM, required for the provisioner stage.
-    additional_unattend_config {
-      pass         = "oobeSystem"
-      component    = "Microsoft-Windows-Shell-Setup"
-      setting_name = "FirstLogonCommands"
-      content      = file("${path.module}/winrm_files/FirstLogonCommands.xml")
-    }
   }
 
   boot_diagnostics {
@@ -245,6 +229,23 @@ resource "azurerm_virtual_machine" "vm-windows" {
   tags = {
     JumpboxName = var.jumpboxes.windows[count.index].destroy_after_deploy ? "RTI" : "WINDOWS-JUMPBOX"
   }
+}
+
+# Installs WinRM on Windows jumpboxes
+resource "azurerm_virtual_machine_extension" "install-winrm" {
+  count                = length(var.jumpboxes.windows)
+  name                 = var.jumpboxes.windows[count.index].name
+  location             = var.resource-group[0].location
+  resource_group_name  = var.resource-group[0].name
+  virtual_machine_name = azurerm_virtual_machine.vm-windows[count.index].name
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.9"
+  settings             = <<SETTINGS
+    {
+      "commandToExecute":"powershell -ExecutionPolicy Unrestricted copy C:\\AzureData\\CustomData.bin C:\\AzureData\\install-winrm.ps1; C:\\AzureData\\install-winrm.ps1"
+    }
+    SETTINGS
 }
 
 # Prepare RTI:
