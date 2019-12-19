@@ -29,18 +29,18 @@
 #    name: pywinrm
 #    state: latest
 
-- name: test
-  register: results
-  args:
-    stdin: |
-        import winrm
-        session = winrm.Session('10.0.1.4', auth=('azureadm','Sap@hana2019!'))
-        result = session.run_ps("hostname")
-        print(result.std_out)
-  command: /usr/bin/python
-  ignore_errors: true
+#- name: test
+#  register: results
+#  args:
+#    stdin: |
+#        import winrm
+#        session = winrm.Session('10.0.1.4', auth=('azureadm','Sap@hana2019!'))
+#        result = session.run_ps("hostname")
+#        print(result.std_out)
+#  command: /usr/bin/python
+#  ignore_errors: true
     
-- debug: var=results
+#- debug: var=results
 
 - name: Install pip for python3
   command: |
