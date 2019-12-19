@@ -17,11 +17,17 @@
 - name: Install pip for python
   command: |
     python2 /usr/bin/get-pip.py
-   
-- name: Install pywinrm
-  pip:
-    name: pywinrm
+
+- name: Install python3-winrm
+  apt:
+    name: python3-winrm
     state: latest
+    force_apt_get: yes
+
+#- name: Install pywinrm
+#  pip:
+#    name: pywinrm
+#    state: latest
 
 - name: test
   register: results
