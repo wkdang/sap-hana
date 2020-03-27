@@ -95,5 +95,5 @@ ExitIfFailed $? "Failed to set kernel.sysrq value to 184"
 sysctl -p
 ExitIfFailed $? "Failed to load new kernel.sysrq value"
 
-echo "KDUMP is successfully enabled, please reboot system to apply change"
+echo "KDUMP is successfully enabled, please reboot the system to apply the change"
 exit 0
