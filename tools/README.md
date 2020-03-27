@@ -9,5 +9,4 @@ dumpsystem.sh: Produces dumps of the bare metal (LI or VLI) system to
 sar-iostat.sh: Collect statistics from sar and iostat, control overall
   disk space utilized.
 
-enable-kdump.sh: Enables kdump on a bare metal LI machine running
-  SLES12-SP3 and above versions.
+enable-kdump.sh: Enables kdump on a LI/VLI system.

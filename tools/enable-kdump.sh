@@ -1,6 +1,5 @@
 #!/bin/bash
-# This script enables kdump on LI systems
-# supported OS version are SLES12-SP3 and above
+# This script enables kdump on LI/VLI system
 
 ExitIfFailed()
 {
@@ -9,6 +8,43 @@ ExitIfFailed()
         exit 1
     fi
 }
+
+# operating system supported by this script
+supported_os=(
+    "SLES"
+)
+
+# operating system versions supported by this script
+supported_version=( "12-SP3"
+    "12-SP4"
+    "12-SP5"
+    "15-SP1"
+    "15-SP2"
+)
+
+# get OS name and OS version
+# /etc/os-release file has this information
+# in the form of key value pair so these can be
+# imported in shell varible
+eval $(cat /etc/os-release | sed -e s"@: @=@")
+
+# check if the os and version is supported by this script
+supported="false"
+for i in "${supported_os[@]}"; do
+    if [[ "$NAME" == "$i" ]]; then
+        for j in "${supported_version[@]}"; do
+            if [[ "$VERSION" == "$j" ]]; then
+                supported="true"
+                break
+            fi
+        done
+        break
+    fi
+done
+if [[ "$supported" == "false" ]]; then
+    echo "This script does not support current OS $NAME, VERSION $VERSION. Please raise request to support this OS and Version"
+    exit 1
+fi
 
 # check if the kexec-tool is enabled
 rpm -q kexec-tools
@@ -26,15 +62,18 @@ ExitIfFailed $? "Failed to get memory using free command"
 
 # high memory to use for kdump is calculated according to system
 # if the total memory of a system is greater than 1TB
-# then the high value to use is (High From kdumptool * RAM in TB)
+# then the high value to use is (High From kdumptool * RAM in TB + LUNS / 2)
 high_to_use=$High
 if [ $mem -gt 1 ]; then
     high_to_use=$(($High*$mem))
 fi
+ # Add LUNS/2 to high_to_use
+high_to_use=$(($high_to_use + $(($(lsblk | grep disk | wc -l)/2))))
+echo $high_to_use
 
 # replace high and low value in /boot/grub2/grub.cfg
 sed -i "s/crashkernel=[0-9]*M,high/crashkernel=$high_to_use\M,high/gI" /boot/grub2/grub.cfg
-ExitIfFailed $? "Enable to change kernal crash high value in /boot/grub2/grub.cfg"
+ExitIfFailed $? "Enable to change kernel crash high value in /boot/grub2/grub.cfg"
 
 sed -i "s/crashkernel=[0-9]*M,low/crashkernel=$Low\M,low/gI" /boot/grub2/grub.cfg
 ExitIfFailed $? "Enable to change kernal crash low value in /boot/grub2/grub.cfg"
