@@ -69,7 +69,6 @@ if [ $mem -gt 1 ]; then
 fi
  # Add LUNS/2 to high_to_use
 high_to_use=$(($high_to_use + $(($(lsblk | grep disk | wc -l)/2))))
-echo $high_to_use
 
 # replace high and low value in /boot/grub2/grub.cfg
 sed -i "s/crashkernel=[0-9]*M,high/crashkernel=$high_to_use\M,high/gI" /boot/grub2/grub.cfg
