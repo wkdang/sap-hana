@@ -56,7 +56,7 @@ ExitIfFailed $? "kxec-tools required to enable kdump, please install"
 eval $(kdumptool calibrate | sed -e s"@: @=@")
 ExitIfFailed $? "Failed to run kdumptool calibrate command"
 
-# get system memory in tb
+# get system memory in TB
 mem=$(free --tera | awk 'FNR == 2 {print $2}')
 ExitIfFailed $? "Failed to get memory using free command"
 
