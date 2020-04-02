@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script enables kdump on LI/VLI system
+# This script enables kdump on HANA Large Instances(Type 1/2)
 
 ExitIfFailed()
 {
@@ -67,7 +67,8 @@ high_to_use=$High
 if [ $mem -gt 1 ]; then
     high_to_use=$(($High*$mem))
 fi
- # Add LUNS/2 to high_to_use
+
+# Add LUNS/2 to high_to_use
 high_to_use=$(($high_to_use + $(($(lsblk | grep disk | wc -l)/2))))
 
 # replace high and low value in /boot/grub2/grub.cfg
