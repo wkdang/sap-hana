@@ -1,6 +1,6 @@
 {
   "infrastructure": {
-    "region": "eastus",
+    "region": "westus2",
     "resource_group": {
       "is_existing": "false",
       "name": "test-rg"

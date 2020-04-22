@@ -61,7 +61,7 @@ This is Azure pipeline test created for deploy/v2
       steps:
       - script: |
           az login --service-principal --user $(hana-pipeline-spn-id) --password  $(hana-pipeline-spn-pw) --tenant $(landscape-tenant) --output none
-          az group create --location eastus -n $(testcase)
+          az group create --location westus2 -n $(testcase)
           echo '##vso[task.setvariable variable=arm_id]$(az group show --name $(testcase) --query id --output tsv)'
       - template: test-case-template-update.yaml
         parameters:
