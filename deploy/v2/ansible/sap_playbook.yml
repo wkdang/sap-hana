@@ -15,6 +15,12 @@
       loop: "{{ output.databases|flatten(levels=1) }}"
       when: item.platform == 'HANA'
 
+- hosts: hanadbnodes
+  become: true
+  become_user: root
+  roles:
+    - role: resource_verification
+
 # Prepare os, disks and mount points on Hana Database servers
 - hosts: hanadbnodes
   become: true
