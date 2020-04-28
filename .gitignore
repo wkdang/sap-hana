@@ -25,3 +25,4 @@ set-sp.sh
 
 # ignore any clustering auth scripts
 set-clustering-auth*.sh
+.DS_Store
