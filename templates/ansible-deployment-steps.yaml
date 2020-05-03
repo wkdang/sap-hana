@@ -14,7 +14,6 @@ steps:
       echo "az network vnet subnet update -g ${{parameters.testCaseName}} -n subnet-mgmt --vnet-name vnet-mgmt --network-security-group nsg-mgmt"
     displayName: 'Update NSG for subnet subnet-mgmt'
   - script: |
-      echo "Ansible Deployment in Progress..."
       cd deploy/v2/ansible_config_files
       rti_user=$(cat output.json | jq -r '.jumpboxes.linux[] | select(.destroy_after_deploy == "true") | .authentication.username')
       rti_public_ip=$(cat output.json | jq -r '.jumpboxes.linux[] | select(.destroy_after_deploy == "true") | .public_ip_address')      
@@ -22,10 +21,16 @@ steps:
       ansible-playbook --version
       cd sap-hana
       git checkout $(System.PullRequest.SourceBranch)
+      '
+    displayName: 'Checkout PR branch on RTI'
+  - script: |
+      rti_user=$(cat output.json | jq -r '.jumpboxes.linux[] | select(.destroy_after_deploy == "true") | .authentication.username')
+      rti_public_ip=$(cat output.json | jq -r '.jumpboxes.linux[] | select(.destroy_after_deploy == "true") | .public_ip_address')      
+      ssh -i /tmp/sshkey -o StrictHostKeyChecking=no "${rti_user}"@"${rti_public_ip}" '
       export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
       export ANSIBLE_HOST_KEY_CHECKING=False
       source export-clustering-sp-details.sh
-      ansible-playbook -i hosts deploy/v2/ansible/sap_playbook.yml     
+      ansible-playbook -i hosts sap-hana/deploy/v2/ansible/sap_playbook.yml     
       '
     displayName: 'Ansible Deployment'
     env:
