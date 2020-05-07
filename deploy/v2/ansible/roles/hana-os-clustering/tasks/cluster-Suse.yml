@@ -80,6 +80,7 @@
         timeout="600"
 
     - name: Ensure the STONITH fencing device is created
+      when: hana_database.size != "LargeInstance"
       shell: >
         crm configure primitive rsc_st_azure stonith:fence_azure_arm params
         subscriptionId="{{ sap_hana_fencing_agent_subscription_id }}"
@@ -87,6 +88,34 @@
         tenantId="{{ sap_hana_fencing_agent_tenant_id }}"
         login="{{ sap_hana_fencing_agent_client_id }}"
         passwd="{{ sap_hana_fencing_agent_client_password }}"
+    
+    - name: Ensure the STONITH SBD is created
+      when: groups['iscsi'] | length > 0
+      block:
+
+         # How long to wait for STONITH actions(reboot, on, off) to complete
+        - name: Configure time-out
+          shell: >
+            crm configure property stonith-timeout=144
+            crm configure property stonith-enabled=true
+
+        - name: List resource
+          shell: >
+            crm resource list | grep 'sbd' | awk '{ print $1; }'
+          register:
+            sbd_device
+
+        # "stonith-sbd" is the sbd device in most cases
+        - name: Stop and remove sbd device
+          shell: >
+            crm resource stop "{{ sbd_device.stdout }}"
+            crm resource delete "{{ sbd_device.stdout }}"
+        
+        - name: Create SBD disk STONITH resource
+          shell: >
+            crm configure primitive stonith-sbd stonith:external/sbd \
+            params pcmk_delay_max="15" \
+            op monitor interval="15" timeout="15"
 
     - name: Ensure SAP HANA Topology resource is configured
       shell: >

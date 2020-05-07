@@ -1,6 +1,12 @@
 ---
 
 - import_tasks: pre_checks.yml
+
+# If iSCSI devices are provisioned, SBD will be set up
+- import_tasks: sbd-device-setup.yml
+  when: groups['iscsi'] | length > 0
+
 - import_tasks: provision.yml
   when: cluster_existence_check_result.rc != 0
+  
 - import_tasks: post_provision_report.yml

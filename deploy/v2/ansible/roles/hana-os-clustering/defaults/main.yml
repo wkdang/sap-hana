@@ -1,0 +1,10 @@
+---
+
+iscsi_sbd_services:
+  - iscsid
+  - iscsi
+  - sbd
+
+iscsi_object: iqn.2006-04
+
+iscsi_port: "3260"

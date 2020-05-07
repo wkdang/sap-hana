@@ -1,0 +1,40 @@
+---
+
+- name: Update SLES
+  zypper:
+    name: '*'
+    state: latest
+    disable_recommends: no
+
+- name: Remove packages
+  package:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ uninstall_packages | flatten(levels=1) }}"
+
+- name: Install packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ install_packages | flatten(levels=1) }}"
+
+- name: Enable the iSCSI target service
+  service: name=targetcli enabled=yes state=started
+
+- name: Create iSCSI device on iSCSI target server
+  block:
+    - name: Create the root folder for all SBD devices
+      file: 
+        path: /sbd
+        state: directory
+
+    - name: Create the SBD device for clusters of SAP System
+      include_tasks: iscsi-configure.yml
+      vars: 
+        cluster_name: "{{ item }}"
+      loop: "{{ clusters }}"
+
+    # - name: Get initiators
+    #   set_fact: 
+    #     initiator1: "{{ iscsi_object }}.{{ hana_database.nodes[0].dbname }}.local:{{ hana_database.nodes[0].dbname }}"
+    #     initiator2: "{{ iscsi_object }}.{{ hana_database.nodes[1].dbname }}.local:{{ hana_database.nodes[1].dbname }}"

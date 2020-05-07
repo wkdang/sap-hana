@@ -1,0 +1,12 @@
+---
+# dbus-1-python is recommended by Azure official reference but it is obsolete
+install_packages:
+  - targetcli-fb
+
+uninstall_packages:
+  - lio-utils
+  - python-rtslib
+  - python-configshell
+  - targetcli
+
+iscsi_object: iqn.2006-04

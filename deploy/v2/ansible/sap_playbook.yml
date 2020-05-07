@@ -71,6 +71,15 @@
       tasks_from: media_hanadbnode_copy.yml
     when: hana_database.size == "LargeInstance"
 
+- hosts: iscsi
+  become: true
+  become_user: root
+  roles:
+   - role: iscsi-target-install
+     when: 
+       - hana_database.high_availability
+       - groups['iscsi'] | length > 0
+
 # Hana DB components install
 - hosts: hanadbnodes
   become: true

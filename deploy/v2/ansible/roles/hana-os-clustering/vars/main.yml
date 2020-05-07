@@ -26,3 +26,9 @@ cluster_status_cmd:
   Suse: "crm status full"
 
 cluster_status_report_wait_in_s: 60
+
+cluster_name: "db{{ hana_database.instance.sid | lower }}"
+storage_object: "sbd{{ cluster_name }}"
+target: "{{ iscsi_object }}.{{ cluster_name }}.local:{{ cluster_name }}"
+initiator1: "{{ iscsi_object }}.{{ hana_database.nodes[0].dbname }}.local:{{ hana_database.nodes[0].dbname }}"
+initiator2: "{{ iscsi_object }}.{{ hana_database.nodes[1].dbname }}.local:{{ hana_database.nodes[1].dbname }}"

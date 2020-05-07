@@ -1,0 +1,6 @@
+---
+
+clusters:
+  - db{{ hana_database.instance.sid | lower }}
+  - nfs
+  - ascs{{ hana_database.instance.sid | lower }}
