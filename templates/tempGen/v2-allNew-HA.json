@@ -4,7 +4,7 @@
           "name" : "var-rg-name"
       },
       "iscsi": {
-      "iscsi_count": 2,
+      "iscsi_count": 3,
       "size":"Standard_D2s_v3",
       "os": {
         "publisher": "SUSE",
