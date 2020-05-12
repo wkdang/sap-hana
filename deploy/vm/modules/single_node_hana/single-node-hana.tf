@@ -1,6 +1,6 @@
 # Configure the Microsoft Azure Provider
 provider "azurerm" {
-  version = "~> 1.30.1"
+  version = "1.30.1"
 }
 
 module "common_setup" {
@@ -15,6 +15,8 @@ module "common_setup" {
   sap_sid           = var.sap_sid
   use_existing_nsg  = var.use_existing_nsg
   windows_bastion   = var.windows_bastion
+  address_space      = var.address_space
+  address_prefix    = var.address_prefix
 }
 
 module "create_hdb" {
@@ -33,6 +35,7 @@ module "create_hdb" {
   storage_disk_sizes_gb     = var.storage_disk_sizes_gb
   vm_user                   = var.vm_user
   vm_size                   = var.vm_size
+  pw_os_sapadm               = var.pw_os_sapadm
 }
 
 module "windows_bastion_host" {
@@ -111,4 +114,3 @@ EOT
 
   }
 }
-

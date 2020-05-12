@@ -61,6 +61,9 @@
     chdir: /hana/shared/install
     creates: /hana/shared/install/SAP_HANA_DATABASE/hdblcm
 
+- name: install libatomic1
+  zypper: name=libatomic1 state=present    
+
 - name: run hdblcm
   shell: "pwd=$(<../hdbserver_{{ sap_sid }}_passwords.xml); rm ../hdbserver_{{ sap_sid }}_passwords.xml; echo $pwd | ./hdblcm --batch --action=install --configfile='../hdbserver_{{ sap_sid }}_install.cfg' --read_password_from_stdin=xml"
   args:

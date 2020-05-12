@@ -3,6 +3,9 @@ disks:
   /dev/disk/azure/scsi1/lun0 : vg_hana_data_{{ sap_sid }}
   /dev/disk/azure/scsi1/lun1 : vg_hana_log_{{ sap_sid }}
   /dev/disk/azure/scsi1/lun2 : vg_hana_shared
+  /dev/disk/azure/scsi1/lun3 : vg_backup
+  /dev/disk/azure/scsi1/lun4 : vg_sapmnt
+  /dev/disk/azure/scsi1/lun5 : vg_user_sap
 
 logvols:
   hana_shared:
@@ -17,3 +20,15 @@ logvols:
     size: 100%FREE
     vol: vg_hana_log_{{ sap_sid }}
     mountpoint: /hana/log/{{ sap_sid }}
+  hana_backup:
+    size: 100%FREE
+    vol: vg_backup
+    mountpoint: /backup
+  hana_sapmnt:
+    size: 100%FREE
+    vol: vg_sapmnt
+    mountpoint: /sapmnt
+  hana_user_sap:
+    size: 100%FREE
+    vol: vg_user_sap
+    mountpoint: /user/sap

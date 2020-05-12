@@ -238,6 +238,16 @@ variable "linux_bastion" {
   default     = false
 }
 
+variable "address_space"{
+  description = ""
+  default = ["10.0.0.0/21"]
+}
+
+variable "address_prefix"{
+  description = ""
+  default = "10.0.0.0/24"
+}
+
 locals {
   #name of the linux vm
   linux_vm_name = "${var.az_domain_name}-linux-bastion"

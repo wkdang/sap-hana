@@ -38,10 +38,22 @@ variable "sap_sid" {
   default = "PV1"
 }
 
+variable "address_space"{
+  description = ""
+  default = ["10.0.0.0/21"]
+}
+
+variable "address_prefix"{
+  description = ""
+  default = "10.0.0.0/24"
+}
+
+
 variable "windows_bastion" {
   description = "Whether or not you want a windows bastion host"
   default     = false
 }
+
 
 locals {
   all_ips      = ["0.0.0.0/0"]

@@ -68,15 +68,17 @@ resource "azurerm_virtual_machine" "vm" {
   os_profile {
     computer_name  = var.machine_name
     admin_username = var.vm_user
+    admin_password = var.pw_os_sapadm
   }
 
   os_profile_linux_config {
-    disable_password_authentication = true
+    disable_password_authentication = false
 
-    ssh_keys {
-      path     = "/home/${var.vm_user}/.ssh/authorized_keys"
-      key_data = file(var.sshkey_path_public)
-    }
+    #ssh_keys {
+    #  path     = "/home/${var.vm_user}/.ssh/authorized_keys"
+    #  key_data = file(var.sshkey_path_public)
+
+    #}
   }
 
   boot_diagnostics {

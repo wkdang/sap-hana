@@ -67,3 +67,6 @@ locals {
   vm_hdb_name  = "hdb${var.hdb_num}"
 }
 
+variable "pw_os_sapadm" {
+  description = "Password for the SAP admin, which is an OS user"
+}

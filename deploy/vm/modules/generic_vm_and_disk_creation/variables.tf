@@ -44,4 +44,6 @@ variable "vm_size" {
 variable "vm_user" {
   description = "The username of your VM."
 }
-
+variable "pw_os_sapadm" {
+  description = "Password for the SAP admin, which is an OS user"
+}
